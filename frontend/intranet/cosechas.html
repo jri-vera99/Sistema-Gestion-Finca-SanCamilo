@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosechas — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-leaf"></i> Cosechas</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Registro de Cosechas</div>
+            <button class="btn btn-primario" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Registrar Cosecha</button>
+          </div>
+          <div class="tabla-contenedor">
+            <table class="tabla-datos">
+              <thead><tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Fecha</th><th>Colmena</th></tr></thead>
+              <tbody id="lista-cosechas"><tr><td colspan="5" style="text-align:center;">Cargando cosechas...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-cosecha">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-titulo"><i class="fa-solid fa-leaf"></i> Registrar Cosecha</h3>
+        <button class="modal-cerrar" onclick="cerrarModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <form id="form-cosecha">
+        <div class="modal-cuerpo">
+          <div class="form-grupo">
+            <label class="form-label">Tipo de Producto</label>
+            <select id="tipo_producto" class="form-control form-campo" required>
+              <option value="Miel">Miel (Litros)</option>
+              <option value="Cera">Cera (Kg)</option>
+              <option value="Polen">Polen (Kg)</option>
+              <option value="Propóleo">Propóleo (g)</option>
+            </select>
+          </div>
+          <div class="form-grupo">
+            <label class="form-label">Cantidad</label>
+            <input type="number" id="cantidad" class="form-control form-campo" step="any" min="0.1" required>
+          </div>
+          <div class="form-grupo">
+            <label class="form-label">ID Colmena</label>
+            <input type="number" id="id_colmena" class="form-control form-campo" required>
+          </div>
+          <div class="form-grupo">
+            <label class="form-label">Fecha de Cosecha</label>
+            <input type="date" id="fecha_cosecha" class="form-control form-campo" required>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-contenedor" id="toast-contenedor"></div>
+
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { api, toast } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+
+    window.abrirModal = () => {
+      document.getElementById('form-cosecha').reset();
+      document.getElementById('fecha_cosecha').value = new Date().toISOString().split('T')[0];
+      document.getElementById('modal-cosecha').classList.add('visible');
+    };
+    window.cerrarModal = () => document.getElementById('modal-cosecha').classList.remove('visible');
+
+    async function cargar() {
+      const res = await api.get('/intranet/cosechas');
+      const tbody = document.getElementById('lista-cosechas');
+      if (res?.success && res.data?.length) {
+        tbody.innerHTML = res.data.map(c => `<tr>
+          <td>${c.id_cosecha || c.id}</td>
+          <td>${c.tipo_producto || 'Desconocido'}</td>
+          <td>${c.cantidad}</td>
+          <td>${new Date(c.fecha_cosecha).toLocaleDateString()}</td>
+          <td>${c.id_colmena}</td>
+        </tr>`).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay cosechas registradas.</td></tr>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('cosechas');
+      if (!u) return;
+      renderSidebar('cosechas');
+      await cargar();
+    });
+
+    document.getElementById('form-cosecha').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        tipo_producto: document.getElementById('tipo_producto').value,
+        cantidad: document.getElementById('cantidad').value,
+        id_colmena: document.getElementById('id_colmena').value,
+        fecha_cosecha: document.getElementById('fecha_cosecha').value
+      };
+      const res = await api.post('/intranet/cosechas', body);
+      if (res?.success) {
+        toast.exito(res.message);
+        cerrarModal();
+        cargar();
+      }
+    });
+  </script>
+</body>
+</html>

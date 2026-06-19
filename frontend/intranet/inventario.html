@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventario — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-boxes-stacked"></i> Inventario</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Stock de Productos</div>
+            <button class="btn btn-primario" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Ingresar Stock</button>
+          </div>
+          <div class="tabla-contenedor">
+            <table class="tabla-datos">
+              <thead><tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Unidad</th><th>Fecha</th></tr></thead>
+              <tbody id="lista-inventario"><tr><td colspan="5" style="text-align:center;">Cargando inventario...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-inventario">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-titulo"><i class="fa-solid fa-boxes-stacked"></i> Ingresar Stock</h3>
+        <button class="modal-cerrar" onclick="cerrarModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <form id="form-inventario">
+        <div class="modal-cuerpo">
+          <div class="form-grupo">
+            <label class="form-label">Tipo de Fruta / Producto</label>
+            <select id="id_tipo_fruta" class="form-control form-campo" required></select>
+          </div>
+          <div class="form-grupo">
+            <label class="form-label">Cantidad</label>
+            <input type="number" id="cantidad" class="form-control form-campo" step="any" min="0.1" required>
+          </div>
+          <div class="form-grupo">
+            <label class="form-label">Unidad de Medida</label>
+            <select id="unidad_medida" class="form-control" required>
+              <option value="Kg">Kg</option>
+              <option value="Libras">Libras</option>
+              <option value="Unidades">Unidades</option>
+              <option value="Litros">Litros</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-contenedor" id="toast-contenedor"></div>
+
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { api, toast } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+
+    window.abrirModal = () => {
+      document.getElementById('form-inventario').reset();
+      document.getElementById('modal-inventario').classList.add('visible');
+    };
+    window.cerrarModal = () => document.getElementById('modal-inventario').classList.remove('visible');
+
+    async function cargar() {
+      const res = await api.get('/intranet/inventario_frutas');
+      const tbody = document.getElementById('lista-inventario');
+      if (res?.success) {
+        if (res.tipos) {
+          document.getElementById('id_tipo_fruta').innerHTML = res.tipos.map(t => `<option value="${t.id_tipo_fruta}">${t.nombre_fruta}</option>`).join('');
+        }
+        if (res.data?.length) {
+          tbody.innerHTML = res.data.map(i => `<tr>
+            <td>${i.id_inventario}</td>
+            <td>${i.nombre_fruta || i.id_tipo_fruta}</td>
+            <td>${i.cantidad}</td>
+            <td>${i.unidad_medida}</td>
+            <td>${new Date(i.fecha_registro || i.creado_en || Date.now()).toLocaleDateString()}</td>
+          </tr>`).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay stock registrado.</td></tr>';
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('inventario');
+      if (!u) return;
+      renderSidebar('inventario');
+      await cargar();
+    });
+
+    document.getElementById('form-inventario').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        id_tipo_fruta: document.getElementById('id_tipo_fruta').value,
+        cantidad: document.getElementById('cantidad').value,
+        unidad_medida: document.getElementById('unidad_medida').value
+      };
+      const res = await api.post('/intranet/inventario_frutas', body);
+      if (res?.success) {
+        toast.exito(res.message);
+        cerrarModal();
+        cargar();
+      }
+    });
+  </script>
+</body>
+</html>

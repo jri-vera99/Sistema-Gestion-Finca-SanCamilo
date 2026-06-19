@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Usuarios y Roles — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar" role="navigation"></aside>
+
+  <div class="main-area">
+    <header class="main-header" role="banner">
+      <div class="page-title">
+        <i class="fa-solid fa-user-shield" aria-hidden="true"></i>
+        Usuarios y Roles
+      </div>
+      <div class="header-acciones">
+        <a href="permisos.html" class="btn btn-outline">
+          <i class="fa-solid fa-key" aria-hidden="true"></i>
+          Gestionar Permisos de Roles
+        </a>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-titulo">Lista de Usuarios del Sistema</div>
+          <button class="btn btn-primario" onclick="abrirModalCrear()">
+            <i class="fa-solid fa-plus"></i> Nuevo Usuario
+          </button>
+        </div>
+        
+        <div class="tabla-contenedor">
+          <table class="tabla-datos">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-usuarios">
+              <tr><td colspan="5" style="text-align:center;padding:2rem;">Cargando usuarios...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Crear/Editar Usuario -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-titulo" class="modal-titulo"><i class="fa-solid fa-user"></i> Crear Usuario</h3>
+      <button type="button" class="modal-cerrar" onclick="cerrarModal()"><i class="fa-solid fa-times"></i></button>
+    </div>
+    <form id="form-usuario">
+      <div class="modal-cuerpo">
+        <input type="hidden" id="usuario-id" />
+        <div class="form-grupo">
+          <label class="form-label" for="usuario-nombres">Nombres Completos</label>
+          <input type="text" id="usuario-nombres" class="form-campo form-control" required />
+        </div>
+        <div class="form-grupo">
+          <label class="form-label" for="usuario-correo">Correo Electrónico</label>
+          <input type="email" id="usuario-correo" class="form-campo form-control" required />
+        </div>
+        <div class="form-grupo">
+          <label class="form-label" for="usuario-rol">Rol asignado</label>
+          <select id="usuario-rol" class="form-campo form-control" required></select>
+        </div>
+        <div class="form-grupo">
+          <label class="form-label" for="usuario-contrasena">Contraseña <span id="hint-pwd" style="font-size:0.8rem;color:var(--texto-suave);">(dejar en blanco para no cambiar)</span></label>
+          <input type="password" id="usuario-contrasena" class="form-campo form-control" />
+        </div>
+      </div>
+      <div class="modal-pie">
+        <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar Usuario</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-contenedor" id="toast-contenedor"></div>
+
+<script type="module">
+  import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+  import { api, toast, badgeEstado } from './assets/js/api.js';
+
+  window.logout = cerrarSesion;
+  let currentUser = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    currentUser = await verificarAcceso('usuarios');
+    if (!currentUser) return;
+    renderSidebar('usuarios');
+    await cargarRoles();
+    await cargarUsuarios();
+  });
+
+  async function cargarRoles() {
+    const res = await api.get('/intranet/usuarios/roles/lista');
+    if (res?.success) {
+      document.getElementById('usuario-rol').innerHTML = res.data.map(r => 
+        `<option value="${r.id_rol}">${r.nombre_rol}</option>`
+      ).join('');
+    }
+  }
+
+  async function cargarUsuarios() {
+    const res = await api.get('/intranet/usuarios');
+    const tbody = document.getElementById('tabla-usuarios');
+    
+    if (!res?.success || !res.data.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay usuarios.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = res.data.map(u => {
+      const isSuper = u.es_superadmin === 1;
+      const isSelf = u.id_usuario === currentUser.id_usuario;
+      const badge = u.activo === 1 ? '<span class="badge badge-bueno">Activo</span>' : '<span class="badge badge-malo">Inactivo</span>';
+      
+      let botones = `<button class="btn btn-outline btn-sm" onclick='editarUsuario(${JSON.stringify(u)})' title="Editar"><i class="fa-solid fa-pen"></i></button>`;
+      
+      if (!isSuper || isSelf) {
+        if (!isSelf && !isSuper) {
+          if (u.activo === 1) {
+            botones += ` <button class="btn btn-outline btn-sm" style="color:var(--rojo);" onclick="cambiarEstado(${u.id_usuario}, 0)" title="Desactivar"><i class="fa-solid fa-ban"></i></button>`;
+          } else {
+            botones += ` <button class="btn btn-outline btn-sm" style="color:var(--verde);" onclick="cambiarEstado(${u.id_usuario}, 1)" title="Activar"><i class="fa-solid fa-check"></i></button>`;
+          }
+        }
+      }
+
+      return `
+        <tr>
+          <td>#${u.id_usuario}</td>
+          <td>
+            <strong>${u.nombres}</strong>
+            ${isSuper ? '<i class="fa-solid fa-star" style="color:var(--dorado-miel);font-size:0.8rem;" title="Superadmin"></i>' : ''}
+            <br><span style="font-size:0.8rem;color:var(--texto-suave);">${u.correo}</span>
+          </td>
+          <td>${u.nombre_rol || '—'}</td>
+          <td>${badge}</td>
+          <td>${botones}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  window.abrirModalCrear = () => {
+    document.getElementById('modal-titulo').textContent = 'Crear Nuevo Usuario';
+    document.getElementById('form-usuario').reset();
+    document.getElementById('usuario-id').value = '';
+    document.getElementById('usuario-correo').readOnly = false;
+    document.getElementById('usuario-contrasena').required = true;
+    document.getElementById('hint-pwd').style.display = 'none';
+    document.getElementById('modal-usuario').classList.add('visible');
+  };
+
+  window.editarUsuario = (u) => {
+    document.getElementById('modal-titulo').textContent = 'Editar Usuario';
+    document.getElementById('usuario-id').value = u.id_usuario;
+    document.getElementById('usuario-nombres').value = u.nombres;
+    document.getElementById('usuario-correo').value = u.correo;
+    document.getElementById('usuario-correo').readOnly = true;
+    document.getElementById('usuario-rol').value = u.id_rol;
+    document.getElementById('usuario-contrasena').required = false;
+    document.getElementById('usuario-contrasena').value = '';
+    document.getElementById('hint-pwd').style.display = 'inline';
+    document.getElementById('modal-usuario').classList.add('visible');
+  };
+
+  window.cerrarModal = () => document.getElementById('modal-usuario').classList.remove('visible');
+
+  document.getElementById('form-usuario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('usuario-id').value;
+    const pwd = document.getElementById('usuario-contrasena').value;
+    const body = {
+      nombres: document.getElementById('usuario-nombres').value,
+      correo: document.getElementById('usuario-correo').value,
+      id_rol: document.getElementById('usuario-rol').value
+    };
+
+    if (!id) {
+      body.contrasena = pwd;
+      const res = await api.post('/intranet/usuarios', body);
+      if (res?.success) {
+        toast.exito(res.message);
+        cerrarModal();
+        cargarUsuarios();
+      }
+    } else {
+      const res = await api.put(`/intranet/usuarios/${id}`, body);
+      if (res?.success) {
+        if (pwd) {
+          const resPwd = await api.put(`/intranet/usuarios/${id}/password`, { contrasena: pwd });
+          if (!resPwd?.success) return; // toast error is handled by api.js
+        }
+        toast.exito(res.message);
+        cerrarModal();
+        cargarUsuarios();
+      }
+    }
+  });
+
+  window.cambiarEstado = async (id, activo) => {
+    if (!confirm(`¿Estás seguro de que deseas ${activo ? 'activar' : 'desactivar'} este usuario?`)) return;
+    const res = await api.put(`/intranet/usuarios/${id}/estado`, { activo });
+    if (res?.success) {
+      toast.exito(res.message);
+      cargarUsuarios();
+    }
+  };
+</script>
+</body>
+</html>

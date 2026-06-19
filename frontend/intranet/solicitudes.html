@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Solicitudes Públicas — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-envelope"></i> Solicitudes Públicas</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Mensajes y Solicitudes</div>
+          </div>
+          <div class="tabla-contenedor">
+            <table class="tabla-datos">
+              <thead><tr><th>ID</th><th>Nombre</th><th>Contacto</th><th>Tipo</th><th>Fecha</th><th>Estado/Pago</th><th>Acciones</th></tr></thead>
+              <tbody id="lista-solicitudes"><tr><td colspan="6" style="text-align:center;">Cargando solicitudes...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { api } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('solicitudes');
+      if (!u) return;
+      renderSidebar('solicitudes');
+      
+      const res = await api.get('/intranet/solicitudes');
+      const tbody = document.getElementById('lista-solicitudes');
+      if (res?.success && res.data?.length) {
+        tbody.innerHTML = res.data.map(s => `<tr>
+          <td>${s.id_solicitud}</td>
+          <td>${s.nombre_solicitante || 'Sin nombre'}</td>
+          <td>${s.correo || ''}<br><small>${s.telefono || ''}</small></td>
+          <td>${s.tipo}</td>
+          <td>${new Date(s.creado_en).toLocaleDateString()}</td>
+          <td>
+            <span class="badge ${s.estado === 'pendiente' ? 'bg-naranja' : 'bg-verde'}">${s.estado}</span>
+            <br><small>${s.modo_pago || ''}</small>
+          </td>
+          <td>
+             <button class="btn btn-outline btn-sm" onclick="alert('Mensaje: ' + '${s.mensaje || 'Sin mensaje'}')">Ver</button>
+             ${s.comprobante_url ? `<a href="${s.comprobante_url}" target="_blank" class="btn btn-primario btn-sm">Pago</a>` : ''}
+          </td>
+        </tr>`).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay solicitudes pendientes.</td></tr>';
+      }
+    });
+  </script>
+</body>
+</html>

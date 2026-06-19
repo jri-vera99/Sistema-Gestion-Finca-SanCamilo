@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Finca Agroecológica San Camilo en Ambuquí — Miel artesanal, cítricos frescos, frutas tropicales y hospedaje rural en el Valle del Chota, Ecuador." />
+  <meta name="keywords" content="apiario ambuquí, miel artesanal, hospedaje rural Valle del Chota, cítricos, finca agroecológica" />
+  <title>Finca Agroecológica San Camilo — Ambuquí, Ecuador</title>
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="assets/css/public.css" />
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     NAVBAR
+     ================================================================ -->
+<nav class="navbar-san-camilo" role="navigation" aria-label="Navegación principal">
+  <a href="/" class="navbar-logo" aria-label="Finca San Camilo — Inicio">
+    <div class="navbar-logo-icon" aria-hidden="true">
+      <i class="fa-solid fa-leaf"></i>
+    </div>
+    <div class="navbar-logo-text">
+      <strong>San Camilo</strong>
+      <span>Finca Agroecológica — Ambuquí</span>
+    </div>
+  </a>
+
+  <ul class="navbar-nav" role="list">
+    <li><a href="/" class="activo" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i> Inicio</a></li>
+    <li><a href="#productos"><i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Productos</a></li>
+    <li><a href="#hospedaje"><i class="fa-solid fa-house-chimney-window" aria-hidden="true"></i> Hospedaje</a></li>
+    <li><a href="#contacto"><i class="fa-solid fa-envelope" aria-hidden="true"></i> Contacto</a></li>
+    <li><a href="reservar.html" class="navbar-cta"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Reservar</a></li>
+  </ul>
+</nav>
+
+<!-- ================================================================
+     HERO PRINCIPAL
+     ================================================================ -->
+<section class="hero" aria-label="Presentación de la finca">
+  <!-- TODO: reemplazar fondo por fotografía real de la finca San Camilo en Ambuquí -->
+  <div class="hero-bg" role="img" aria-label="Vista del apiario de la finca San Camilo en Ambuquí"></div>
+  <div class="hero-overlay" aria-hidden="true"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+      Ambuquí, Valle del Chota — Ecuador
+    </div>
+
+    <h1>Naturaleza, <span>miel</span> y<br>hospitalidad andina</h1>
+
+    <p>
+      Producción apícola artesanal, frutas frescas de temporada y hospedaje
+      rural en el corazón del Valle del Chota. Bienvenido a la Finca San Camilo.
+    </p>
+
+    <div class="hero-botones">
+      <a href="#productos" class="btn-primario">
+        <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+        Ver nuestros productos
+      </a>
+      <a href="reservar.html" class="btn-secundario">
+        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+        Solicitar reserva
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECCIÓN: PROPUESTA DE VALOR (3 columnas)
+     ================================================================ -->
+<section class="seccion seccion-blanca" aria-labelledby="propuesta-titulo">
+  <div class="contenedor">
+    <div class="seccion-header">
+      <span class="seccion-eyebrow">Por qué elegirnos</span>
+      <h2 class="seccion-titulo" id="propuesta-titulo">Una experiencia auténtica en el campo</h2>
+      <div class="divisor" aria-hidden="true">
+        <div class="divisor-linea"></div>
+        <i class="fa-solid fa-leaf divisor-icono"></i>
+        <div class="divisor-linea"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:2rem;">
+
+      <article style="text-align:center;padding:2rem 1.5rem;">
+        <div style="width:64px;height:64px;background:rgba(92,107,58,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;color:var(--verde-olivo);font-size:1.6rem;">
+          <i class="fa-solid fa-jar" aria-hidden="true"></i>
+        </div>
+        <h3 style="font-family:var(--fuente-titulo);font-size:1.2rem;color:var(--verde-bosque);margin-bottom:0.6rem;">Miel 100% Artesanal</h3>
+        <p style="font-size:0.92rem;color:var(--cafe-medio);">Extraída directamente de nuestro apiario en Ambuquí, sin conservantes ni procesado industrial. Rica en enzimas naturales y propóleos.</p>
+      </article>
+
+      <article style="text-align:center;padding:2rem 1.5rem;">
+        <div style="width:64px;height:64px;background:rgba(232,135,58,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;color:var(--naranja);font-size:1.6rem;">
+          <i class="fa-solid fa-lemon" aria-hidden="true"></i>
+        </div>
+        <h3 style="font-family:var(--fuente-titulo);font-size:1.2rem;color:var(--verde-bosque);margin-bottom:0.6rem;">Frutas de Temporada</h3>
+        <p style="font-size:0.92rem;color:var(--cafe-medio);">Mandarinas, aguacates, naranjas, mango Tommy y plátanos cultivados de forma agroecológica, cosechados frescos para ti.</p>
+      </article>
+
+      <article style="text-align:center;padding:2rem 1.5rem;">
+        <div style="width:64px;height:64px;background:rgba(201,150,61,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;color:var(--dorado-miel);font-size:1.6rem;">
+          <i class="fa-solid fa-house-chimney-window" aria-hidden="true"></i>
+        </div>
+        <h3 style="font-family:var(--fuente-titulo);font-size:1.2rem;color:var(--verde-bosque);margin-bottom:0.6rem;">Hospedaje Rural</h3>
+        <p style="font-size:0.92rem;color:var(--cafe-medio);">Cabañas y habitaciones rodeadas de naturaleza en el Valle del Chota. Ideal para descanso familiar y turismo agroecológico.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECCIÓN: PRODUCTOS DESTACADOS
+     ================================================================ -->
+<section class="seccion seccion-oscura" id="productos" aria-labelledby="prod-titulo">
+  <div class="contenedor">
+    <div class="seccion-header">
+      <span class="seccion-eyebrow">Directamente de la finca</span>
+      <h2 class="seccion-titulo" id="prod-titulo">Nuestros Productos</h2>
+      <div class="divisor" aria-hidden="true">
+        <div class="divisor-linea"></div>
+        <i class="fa-solid fa-basket-shopping divisor-icono"></i>
+        <div class="divisor-linea"></div>
+      </div>
+      <p class="seccion-descripcion">Todos disponibles para compra directa en la finca o mediante pedido previo.</p>
+    </div>
+
+    <div class="grid-productos" id="grid-productos-home">
+      <!-- Cargado dinámicamente desde /api/public/productos -->
+      <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--cafe-medio);">
+        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+        Cargando productos...
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="#productos" class="btn-verde">
+        Ver catálogo completo
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECCIÓN: APIARIO E INFORMACIÓN
+     ================================================================ -->
+<section class="seccion seccion-blanca" id="apiario" aria-labelledby="api-titulo">
+  <div class="contenedor">
+    <div class="apiario-grid">
+      <div class="apiario-imagen">
+        <!-- TODO: reemplazar por fotografía real de las colmenas de la finca -->
+        <img
+          src="https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&auto=format&fit=crop"
+          alt="Apicultor revisando una de las colmenas del apiario San Camilo en Ambuquí"
+          loading="lazy"
+        />
+      </div>
+
+      <div>
+        <span class="seccion-eyebrow">Apiario San Camilo</span>
+        <h2 class="seccion-titulo" id="api-titulo">Producción apícola artesanal</h2>
+        <div class="divisor" style="justify-content:flex-start;" aria-hidden="true">
+          <div class="divisor-linea"></div>
+          <i class="fa-solid fa-leaf divisor-icono"></i>
+        </div>
+        <p class="seccion-descripcion">
+          Nuestro apiario está ubicado en el privilegiado microclima del Valle del Chota, a 1.500 msnm,
+          donde las abejas encuentran diversidad de flora nativa. Las colmenas son monitoreadas
+          continuamente para garantizar la salud de las colonias y la calidad de la miel.
+        </p>
+
+        <ul class="apiario-lista" aria-label="Características del apiario">
+          <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Colmenas con monitoreo de temperatura y humedad</li>
+          <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Miel extraída sin calentamiento artificial</li>
+          <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Cera de abeja natural para cosmética artesanal</li>
+          <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Sin uso de pesticidas en área circundante</li>
+          <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Visitas guiadas al apiario disponibles</li>
+        </ul>
+
+        <div style="margin-top:1.75rem;">
+          <a href="#productos" class="btn-primario">
+            <i class="fa-solid fa-jar" aria-hidden="true"></i>
+            Conocer nuestros productos de miel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECCIÓN: HOSPEDAJE (preview)
+     ================================================================ -->
+<section class="seccion seccion-crema" id="hospedaje" aria-labelledby="hosp-titulo">
+  <div class="contenedor">
+    <div class="seccion-header">
+      <span class="seccion-eyebrow">Turismo rural</span>
+      <h2 class="seccion-titulo" id="hosp-titulo">Hospedaje en Ambuquí</h2>
+      <div class="divisor" aria-hidden="true">
+        <div class="divisor-linea"></div>
+        <i class="fa-solid fa-house-chimney-window divisor-icono"></i>
+        <div class="divisor-linea"></div>
+      </div>
+      <p class="seccion-descripcion">Descansa rodeado de naturaleza. Habitaciones y cabañas disponibles para familias, parejas y grupos.</p>
+    </div>
+
+    <div class="grid-hospedaje" id="grid-hospedaje-home">
+      <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--cafe-medio);">
+        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+        Cargando opciones de hospedaje...
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="#hospedaje" class="btn-verde" style="margin-right:1rem;">
+        Ver todas las opciones
+      </a>
+      <a href="reservar.html" class="btn-primario">
+        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+        Solicitar reserva
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECCIÓN: GALERÍA
+     ================================================================ -->
+<section class="seccion seccion-blanca" id="galeria" aria-labelledby="gal-titulo">
+  <div class="contenedor">
+    <div class="seccion-header">
+      <span class="seccion-eyebrow">La finca en imágenes</span>
+      <h2 class="seccion-titulo" id="gal-titulo">Galería</h2>
+      <div class="divisor" aria-hidden="true">
+        <div class="divisor-linea"></div>
+        <i class="fa-solid fa-images divisor-icono"></i>
+        <div class="divisor-linea"></div>
+      </div>
+    </div>
+
+    <div class="galeria-grid" id="galeria-home" aria-label="Galería fotográfica de la finca">
+      <!-- Cargado dinámicamente -->
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECCIÓN: CONTACTO RÁPIDO
+     ================================================================ -->
+<section class="seccion seccion-verde" id="contacto" aria-labelledby="contacto-titulo">
+  <div class="contenedor">
+    <div class="seccion-header">
+      <span class="seccion-eyebrow">Estamos para atenderte</span>
+      <h2 class="seccion-titulo" id="contacto-titulo" style="color:var(--blanco);">Visítanos o contáctanos</h2>
+      <div class="divisor" aria-hidden="true">
+        <div class="divisor-linea" style="background:var(--dorado-claro);"></div>
+        <i class="fa-solid fa-location-dot divisor-icono" style="color:var(--dorado-claro);"></i>
+        <div class="divisor-linea" style="background:var(--dorado-claro);"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;max-width:960px;margin:0 auto;">
+
+      <!-- Mapa -->
+      <div>
+        <div class="mapa-contenedor" aria-label="Mapa de ubicación de la finca San Camilo en Ambuquí">
+          <!-- Ambuquí, Ibarra, Ecuador — coordenadas aproximadas -->
+          <iframe
+            src="https://www.openstreetmap.org/export/embed.html?bbox=-77.9850%2C0.3300%2C-77.9450%2C0.3600&layer=mapnik&marker=0.3450%2C-77.9650"
+            title="Ubicación de la Finca Agroecológica San Camilo en Ambuquí, Ecuador"
+            loading="lazy"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <p style="font-size:0.78rem;color:rgba(255,255,255,0.45);margin-top:0.5rem;text-align:center;">
+          <!-- TODO: reemplazar con coordenadas exactas de la finca -->
+          Mapa referencial de Ambuquí, Valle del Chota
+        </p>
+      </div>
+
+      <!-- Datos de contacto -->
+      <div>
+        <div class="ubicacion-datos" style="margin-top:0;">
+          <div class="dato-contacto">
+            <div class="dato-contacto-icono"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></div>
+            <div class="dato-contacto-texto">
+              <strong>Dirección</strong>
+              <!-- TODO: reemplazar por dirección exacta de la finca -->
+              <span>Ambuquí, Ibarra, Imbabura, Ecuador</span>
+            </div>
+          </div>
+          <div class="dato-contacto">
+            <div class="dato-contacto-icono"><i class="fa-solid fa-phone" aria-hidden="true"></i></div>
+            <div class="dato-contacto-texto">
+              <strong>Teléfono</strong>
+              <!-- TODO: reemplazar por número real -->
+              <span>+593 (0) XXX XXX XXX</span>
+            </div>
+          </div>
+          <div class="dato-contacto">
+            <div class="dato-contacto-icono"><i class="fa-solid fa-envelope" aria-hidden="true"></i></div>
+            <div class="dato-contacto-texto">
+              <strong>Correo</strong>
+              <!-- TODO: reemplazar por correo oficial del negocio -->
+              <span>contacto@sancamilo.ec</span>
+            </div>
+          </div>
+          <div class="dato-contacto">
+            <div class="dato-contacto-icono"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></div>
+            <div class="dato-contacto-texto">
+              <strong>WhatsApp</strong>
+              <span>Consultas y pedidos directos</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.75rem;">
+          <a href="#contacto" class="btn-primario">
+            <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+            Enviar mensaje
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     FOOTER
+     ================================================================ -->
+<footer class="footer" role="contentinfo">
+  <div class="footer-grid">
+    <div class="footer-marca">
+      <strong>Finca Agroecológica San Camilo</strong>
+      <span style="font-size:0.75rem;color:var(--dorado-claro);letter-spacing:0.08em;text-transform:uppercase;">Ambuquí, Ecuador</span>
+      <p>Producción apícola artesanal, frutas tropicales y hospedaje rural en el Valle del Chota.</p>
+    </div>
+
+    <div>
+      <h4>Productos</h4>
+      <ul class="footer-nav">
+        <li><a href="#productos">Miel artesanal</a></li>
+        <li><a href="#productos">Cera de abeja</a></li>
+        <li><a href="#productos">Cítricos frescos</a></li>
+        <li><a href="#productos">Frutas tropicales</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4>Visitarnos</h4>
+      <ul class="footer-nav">
+        <li><a href="#hospedaje">Hospedaje</a></li>
+        <li><a href="reservar.html">Reservar</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+        <li><a href="/intranet/login.html" style="color:rgba(255,255,255,0.3);font-size:0.8rem;">Acceso interno</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>&copy; <span id="anio-footer"></span> Finca Agroecológica San Camilo. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+<!-- Toast container -->
+<div class="toast-contenedor" id="toast-contenedor" aria-live="polite" aria-atomic="true"></div>
+
+<script src="assets/js/public.js"></script>
+<script>
+  // Año dinámico en footer
+  document.getElementById('anio-footer').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

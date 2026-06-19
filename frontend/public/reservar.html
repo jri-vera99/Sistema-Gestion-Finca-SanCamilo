@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Solicita tu reserva de hospedaje o pedido de productos en la Finca Agroecológica San Camilo en Ambuquí, Ecuador." />
+  <title>Solicitar Reserva — Finca San Camilo, Ambuquí</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/public.css" />
+</head>
+<body>
+
+<nav class="navbar-san-camilo" role="navigation" aria-label="Navegación principal">
+  <a href="/" class="navbar-logo" aria-label="Finca San Camilo — Inicio">
+    <div class="navbar-logo-icon" aria-hidden="true"><i class="fa-solid fa-leaf"></i></div>
+    <div class="navbar-logo-text">
+      <strong>San Camilo</strong>
+      <span>Finca Agroecológica — Ambuquí</span>
+    </div>
+  </a>
+  <ul class="navbar-nav" role="list">
+    <li><a href="/"><i class="fa-solid fa-house" aria-hidden="true"></i> Inicio</a></li>
+    <li><a href="productos.html"><i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Productos</a></li>
+    <li><a href="hospedaje.html"><i class="fa-solid fa-house-chimney-window" aria-hidden="true"></i> Hospedaje</a></li>
+    <li><a href="contacto.html"><i class="fa-solid fa-envelope" aria-hidden="true"></i> Contacto</a></li>
+    <li><a href="reservar.html" class="navbar-cta activo"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Reservar</a></li>
+  </ul>
+</nav>
+
+<!-- Encabezado de página -->
+<div style="background:var(--verde-bosque);padding:3rem 2rem;text-align:center;">
+  <span class="seccion-eyebrow" style="color:var(--dorado-claro);">Servicio personalizado</span>
+  <h1 style="font-family:var(--fuente-titulo);color:var(--blanco);font-size:2.2rem;margin:0.5rem 0;">Solicitar Reserva o Pedido</h1>
+  <p style="color:rgba(255,255,255,0.7);max-width:520px;margin:0 auto;">
+    Completa el formulario y nos pondremos en contacto para confirmar tu reserva o pedido.
+  </p>
+</div>
+
+<section class="seccion seccion-crema">
+  <div class="contenedor" style="max-width:780px;">
+
+    <!-- Selector de tipo -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:2.5rem;">
+      <button type="button" class="tipo-btn activo-tipo" data-tipo="reserva" id="btn-tipo-reserva"
+        aria-pressed="true" onclick="seleccionarTipo('reserva')">
+        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+        <span>Reservar Hospedaje</span>
+      </button>
+      <button type="button" class="tipo-btn" data-tipo="compra" id="btn-tipo-compra"
+        aria-pressed="false" onclick="seleccionarTipo('compra')">
+        <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+        <span>Pedir Productos</span>
+      </button>
+      <button type="button" class="tipo-btn" data-tipo="contacto" id="btn-tipo-contacto"
+        aria-pressed="false" onclick="seleccionarTipo('contacto')">
+        <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+        <span>Consulta General</span>
+      </button>
+    </div>
+
+    <style>
+      .tipo-btn {
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        padding: 1.25rem; border-radius: var(--radius-lg);
+        border: 2px solid rgba(92,107,58,0.2); background: var(--blanco);
+        cursor: pointer; font-family: var(--fuente-cuerpo); color: var(--cafe-medio);
+        font-size: 0.9rem; transition: all var(--transicion); text-align: center;
+      }
+      .tipo-btn i { font-size: 1.4rem; color: var(--verde-hoja); }
+      .tipo-btn:hover { border-color: var(--verde-olivo); color: var(--verde-bosque); }
+      .tipo-btn.activo-tipo {
+        border-color: var(--dorado-miel); background: rgba(201,150,61,0.06);
+        color: var(--verde-bosque); font-weight: 600;
+      }
+      .tipo-btn.activo-tipo i { color: var(--dorado-miel); }
+      .seccion-form { display: none; }
+      .seccion-form.visible { display: block; }
+    </style>
+
+    <!-- FORMULARIO UNIFICADO -->
+    <form id="form-solicitud" onsubmit="enviarSolicitud(event)"
+      style="background:var(--blanco);border-radius:var(--radius-lg);padding:2rem;border:1px solid rgba(201,150,61,0.15);box-shadow:0 2px 12px rgba(44,36,22,0.08);">
+
+      <!-- Datos del solicitante (siempre visible) -->
+      <h2 style="font-family:var(--fuente-titulo);font-size:1.3rem;color:var(--verde-bosque);margin-bottom:1.25rem;">
+        <i class="fa-solid fa-user" aria-hidden="true" style="color:var(--dorado-miel);margin-right:0.4rem;"></i>
+        Datos de contacto
+      </h2>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-grupo">
+          <label class="form-etiqueta" for="nombre-solicitante">Nombre completo <span style="color:var(--naranja)">*</span></label>
+          <input type="text" class="form-campo" id="nombre-solicitante" name="nombre_solicitante"
+            placeholder="Tu nombre completo" required autocomplete="name" />
+        </div>
+        <div class="form-grupo">
+          <label class="form-etiqueta" for="correo-solicitante">Correo electrónico <span style="color:var(--naranja)">*</span></label>
+          <input type="email" class="form-campo" id="correo-solicitante" name="correo"
+            placeholder="correo@ejemplo.com" required autocomplete="email" />
+        </div>
+      </div>
+
+      <div class="form-grupo">
+        <label class="form-etiqueta" for="telefono-solicitante">Teléfono / WhatsApp</label>
+        <input type="tel" class="form-campo" id="telefono-solicitante" name="telefono"
+          placeholder="+593 09X XXX XXXX" autocomplete="tel" />
+      </div>
+
+      <!-- SECCIÓN RESERVA -->
+      <div class="seccion-form visible" id="campos-reserva">
+        <hr style="border-color:rgba(92,107,58,0.15);margin:1.5rem 0;" />
+        <h2 style="font-family:var(--fuente-titulo);font-size:1.3rem;color:var(--verde-bosque);margin-bottom:1.25rem;">
+          <i class="fa-solid fa-calendar-check" aria-hidden="true" style="color:var(--dorado-miel);margin-right:0.4rem;"></i>
+          Detalles de la reserva
+        </h2>
+
+        <div class="form-grupo">
+          <label class="form-etiqueta" for="habitacion-sel">Tipo de alojamiento</label>
+          <select class="form-campo" id="habitacion-sel" name="id_habitacion">
+            <option value="">-- Cargando opciones... --</option>
+          </select>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-grupo">
+            <label class="form-etiqueta" for="fecha-inicio">Fecha de llegada <span style="color:var(--naranja)">*</span></label>
+            <input type="date" class="form-campo" id="fecha-inicio" name="fecha_inicio" />
+          </div>
+          <div class="form-grupo">
+            <label class="form-etiqueta" for="fecha-fin">Fecha de salida <span style="color:var(--naranja)">*</span></label>
+            <input type="date" class="form-campo" id="fecha-fin" name="fecha_fin" />
+          </div>
+        </div>
+
+        <div class="form-grupo">
+          <label class="form-etiqueta" for="huespedes">Número de huéspedes</label>
+          <input type="number" class="form-campo" id="huespedes" min="1" max="20" value="1" style="width:120px;" />
+        </div>
+      </div>
+
+      <!-- SECCIÓN COMPRA -->
+      <div class="seccion-form" id="campos-compra">
+        <hr style="border-color:rgba(92,107,58,0.15);margin:1.5rem 0;" />
+        <h2 style="font-family:var(--fuente-titulo);font-size:1.3rem;color:var(--verde-bosque);margin-bottom:1.25rem;">
+          <i class="fa-solid fa-basket-shopping" aria-hidden="true" style="color:var(--dorado-miel);margin-right:0.4rem;"></i>
+          Productos que deseas pedir
+        </h2>
+
+        <div id="lista-productos-orden" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75rem;margin-bottom:1rem;">
+          <p style="color:var(--cafe-medio);font-size:0.9rem;">Cargando productos...</p>
+        </div>
+      </div>
+
+      <!-- NOTAS (siempre visible) -->
+      <div class="form-grupo" style="margin-top:1rem;">
+        <label class="form-etiqueta" for="mensaje">Mensaje o comentarios adicionales</label>
+        <textarea class="form-campo" id="mensaje" name="mensaje"
+          placeholder="Cuéntanos más sobre lo que necesitas..." rows="3"></textarea>
+      </div>
+
+      <!-- SECCIÓN PAGO -->
+      <hr style="border-color:rgba(92,107,58,0.15);margin:1.5rem 0;" />
+      <h2 style="font-family:var(--fuente-titulo);font-size:1.3rem;color:var(--verde-bosque);margin-bottom:1.25rem;">
+        <i class="fa-solid fa-credit-card" aria-hidden="true" style="color:var(--dorado-miel);margin-right:0.4rem;"></i>
+        Forma de pago
+      </h2>
+
+      <div class="form-grupo">
+        <div class="form-radio-grupo" role="radiogroup" aria-label="Selecciona forma de pago">
+          <label class="form-radio">
+            <input type="radio" name="modo_pago" value="en_sitio" id="pago-sitio" checked
+              onchange="mostrarUpload(false)" />
+            Pagar en las instalaciones (genera orden pendiente)
+          </label>
+          <label class="form-radio">
+            <input type="radio" name="modo_pago" value="comprobante" id="pago-comprobante"
+              onchange="mostrarUpload(true)" />
+            Adjuntar comprobante de transferencia
+          </label>
+        </div>
+      </div>
+
+      <div class="form-grupo" id="zona-upload" style="display:none;">
+        <label class="form-etiqueta" for="comprobante-archivo">Comprobante de pago</label>
+        <label class="upload-zona" for="comprobante-archivo" id="label-upload">
+          <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+          <p>Haz clic para seleccionar tu comprobante</p>
+          <p style="font-size:0.75rem;margin-top:0.25rem;">JPG, PNG o PDF — máximo 5 MB</p>
+          <input type="file" id="comprobante-archivo" name="comprobante"
+            accept=".jpg,.jpeg,.png,.pdf,.webp" onchange="mostrarNombreArchivo(this)" />
+        </label>
+        <p class="form-ayuda" id="nombre-archivo-sel" style="margin-top:0.5rem;"></p>
+      </div>
+
+      <div style="margin-top:2rem;">
+        <button type="submit" class="btn-primario" id="btn-enviar-solicitud" style="font-size:1rem;padding:0.9rem 2rem;">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+          Enviar solicitud
+        </button>
+        <p style="font-size:0.8rem;color:var(--cafe-medio);margin-top:0.75rem;">
+          Al enviar aceptas que nos pongamos en contacto contigo para confirmar tu solicitud.
+        </p>
+      </div>
+
+    </form>
+
+    <!-- Mensaje de éxito -->
+    <div id="exito-reserva" style="display:none;text-align:center;padding:3rem 2rem;background:var(--blanco);border-radius:var(--radius-lg);border:2px solid rgba(92,107,58,0.3);margin-top:1rem;">
+      <div style="width:64px;height:64px;background:rgba(92,107,58,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;color:var(--verde-olivo);font-size:1.8rem;">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      </div>
+      <h2 style="font-family:var(--fuente-titulo);color:var(--verde-bosque);margin-bottom:0.75rem;">Solicitud recibida</h2>
+      <p style="color:var(--cafe-medio);max-width:420px;margin:0 auto 1.5rem;">
+        Hemos recibido tu solicitud. Te contactaremos en las próximas horas para confirmar los detalles.
+      </p>
+      <a href="/" class="btn-primario">Volver al inicio</a>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer" role="contentinfo">
+  <div style="max-width:1100px;margin:0 auto;text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:1rem 0;">
+    &copy; <span id="anio-footer"></span> Finca Agroecológica San Camilo — Ambuquí, Ecuador
+  </div>
+</footer>
+
+<div class="toast-contenedor" id="toast-contenedor" aria-live="polite"></div>
+<script src="assets/js/public.js"></script>
+<script>
+document.getElementById('anio-footer').textContent = new Date().getFullYear();
+
+let tipoActual = 'reserva';
+
+function seleccionarTipo(tipo) {
+  tipoActual = tipo;
+  document.querySelectorAll('.tipo-btn').forEach(b => {
+    b.classList.toggle('activo-tipo', b.dataset.tipo === tipo);
+    b.setAttribute('aria-pressed', b.dataset.tipo === tipo);
+  });
+  document.getElementById('campos-reserva').classList.toggle('visible', tipo === 'reserva');
+  document.getElementById('campos-compra').classList.toggle('visible',  tipo === 'compra');
+}
+
+function mostrarUpload(mostrar) {
+  document.getElementById('zona-upload').style.display = mostrar ? 'block' : 'none';
+}
+
+function mostrarNombreArchivo(input) {
+  const label = document.getElementById('nombre-archivo-sel');
+  label.textContent = input.files[0] ? `Archivo: ${input.files[0].name}` : '';
+}
+
+// Cargar habitaciones disponibles
+async function cargarHabitaciones() {
+  const sel = document.getElementById('habitacion-sel');
+  try {
+    const res  = await fetch('/api/public/hospedaje');
+    const data = await res.json();
+    if (data.success && data.data.length) {
+      sel.innerHTML = '<option value="">-- Selecciona un alojamiento --</option>' +
+        data.data.map(h => `<option value="${h.id_habitacion}">${h.tipo} — $${parseFloat(h.tarifa_base).toFixed(2)}/noche</option>`).join('');
+
+      // Pre-seleccionar si viene por URL
+      const params = new URLSearchParams(window.location.search);
+      const hab = params.get('habitacion');
+      if (hab) sel.value = hab;
+    }
+  } catch {}
+}
+
+// Cargar productos para el pedido
+async function cargarProductosPedido() {
+  const cont = document.getElementById('lista-productos-orden');
+  try {
+    const res  = await fetch('/api/public/productos');
+    const data = await res.json();
+    if (data.success && data.data.length) {
+      cont.innerHTML = data.data.map(p => `
+        <label style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem;border:1.5px solid rgba(92,107,58,0.15);border-radius:var(--radius);cursor:pointer;background:var(--crema);transition:border-color 0.2s;">
+          <input type="checkbox" name="prod_${p.id_producto}" value="${p.id_producto}" style="accent-color:var(--verde-olivo);" />
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:0.88rem;color:var(--cafe);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nombre}</div>
+            <div style="font-size:0.78rem;color:var(--dorado-miel);">$${parseFloat(p.precio).toFixed(2)} / ${p.unidad}</div>
+          </div>
+          <input type="number" placeholder="Cant." min="0" step="0.5" style="width:60px;padding:0.2rem 0.4rem;border:1px solid rgba(92,107,58,0.2);border-radius:6px;font-size:0.82rem;text-align:center;" name="cant_${p.id_producto}" />
+        </label>
+      `).join('');
+    }
+  } catch {}
+}
+
+// Enviar solicitud
+async function enviarSolicitud(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-enviar-solicitud');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Enviando...';
+
+  try {
+    const formData = new FormData();
+    formData.append('tipo',                tipoActual);
+    formData.append('nombre_solicitante',  document.getElementById('nombre-solicitante').value);
+    formData.append('correo',              document.getElementById('correo-solicitante').value);
+    formData.append('telefono',            document.getElementById('telefono-solicitante').value);
+    formData.append('mensaje',             document.getElementById('mensaje').value);
+    formData.append('modo_pago',           document.querySelector('[name="modo_pago"]:checked')?.value || 'en_sitio');
+
+    if (tipoActual === 'reserva') {
+      formData.append('id_habitacion', document.getElementById('habitacion-sel').value);
+      formData.append('fecha_inicio',  document.getElementById('fecha-inicio').value);
+      formData.append('fecha_fin',     document.getElementById('fecha-fin').value);
+    }
+
+    if (tipoActual === 'compra') {
+      const productos = [];
+      document.querySelectorAll('[name^="prod_"]').forEach(chk => {
+        if (chk.checked) {
+          const id = chk.value;
+          const cant = parseFloat(document.querySelector(`[name="cant_${id}"]`)?.value) || 1;
+          productos.push({ id_producto: id, cantidad: cant });
+        }
+      });
+      formData.append('productos', JSON.stringify(productos));
+    }
+
+    const archivo = document.getElementById('comprobante-archivo')?.files[0];
+    if (archivo) formData.append('comprobante', archivo);
+
+    const res  = await fetch('/api/public/solicitudes', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('form-solicitud').style.display = 'none';
+      document.getElementById('exito-reserva').style.display  = 'block';
+    } else {
+      toast(data.error || 'Error al enviar la solicitud. Intenta nuevamente.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Enviar solicitud';
+    }
+  } catch (err) {
+    toast('Error de conexión. Verifica tu internet e intenta nuevamente.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Enviar solicitud';
+  }
+}
+
+// Fechas mínimas
+const hoy     = new Date().toISOString().split('T')[0];
+const manana  = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+document.getElementById('fecha-inicio').min   = hoy;
+document.getElementById('fecha-fin').min      = manana;
+document.getElementById('fecha-inicio').value = hoy;
+document.getElementById('fecha-fin').value    = manana;
+
+document.getElementById('fecha-inicio').addEventListener('change', function() {
+  const sig = new Date(new Date(this.value).getTime() + 86400000).toISOString().split('T')[0];
+  document.getElementById('fecha-fin').min   = sig;
+  if (document.getElementById('fecha-fin').value <= this.value)
+    document.getElementById('fecha-fin').value = sig;
+});
+
+cargarHabitaciones();
+cargarProductosPedido();
+</script>
+</body>
+</html>

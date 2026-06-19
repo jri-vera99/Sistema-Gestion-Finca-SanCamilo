@@ -1,0 +1,34 @@
+{
+  "name": "sistema-gestion-san-camilo",
+  "version": "2.0.0",
+  "description": "Sistema de gestión agroecológico — Finca San Camilo, Ambuquí",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.9.7",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "keywords": [
+    "apiario",
+    "agroecologico",
+    "hospedaje",
+    "ambuqui",
+    "railway",
+    "mysql"
+  ],
+  "author": "Finca Agroecológica San Camilo",
+  "license": "UNLICENSED"
+}

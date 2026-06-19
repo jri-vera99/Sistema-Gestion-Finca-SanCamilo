@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reportes — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-chart-line"></i> Reportes Generales</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Generador de Reportes</div>
+          </div>
+          <div style="padding:2rem;">
+            <div style="display:flex;gap:1rem;margin-bottom:2rem;align-items:center;">
+              <select id="tipo_reporte" class="form-control" style="width:200px;margin:0;">
+                <option value="produccion">Producción Apícola</option>
+                <option value="hospedaje">Ocupación de Hospedaje</option>
+                <option value="inventario">Movimientos de Inventario</option>
+                <option value="solicitudes">Solicitudes Públicas</option>
+              </select>
+              <input type="date" id="fecha_inicio" class="form-control" style="width:150px;margin:0;">
+              <span>a</span>
+              <input type="date" id="fecha_fin" class="form-control" style="width:150px;margin:0;">
+            </div>
+            
+            <div style="display:flex;gap:1rem;">
+              <button class="btn btn-primario" onclick="exportar('pdf')"><i class="fa-solid fa-file-pdf"></i> Generar PDF</button>
+              <button class="btn btn-outline" style="color:var(--verde);border-color:var(--verde);" onclick="exportar('excel')"><i class="fa-solid fa-file-excel"></i> Exportar Excel</button>
+              <button class="btn btn-outline" onclick="exportar('csv')"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { toast } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+    
+    window.exportar = (formato) => {
+      const tipo = document.getElementById('tipo_reporte').value;
+      const f_inicio = document.getElementById('fecha_inicio').value;
+      const f_fin = document.getElementById('fecha_fin').value;
+      
+      const token = localStorage.getItem('token_intranet');
+      if (!token) {
+        toast.error("No autenticado.");
+        return;
+      }
+
+      let url = `/api/intranet/reportes/${formato}?tipo=${tipo}`;
+      if (f_inicio) url += `&fecha_inicio=${f_inicio}`;
+      if (f_fin) url += `&fecha_fin=${f_fin}`;
+
+      // Open in a new tab to trigger download or PDF view
+      // We pass token in URL or cookies. Since we use JWT headers normally, 
+      // simple window.open might fail auth. To fix: we'll fetch as blob for csv/excel.
+      // For PDF, we can fetch as HTML and open it in an iframe or new window.
+      
+      if (formato === 'pdf') {
+        fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(res => res.text())
+          .then(html => {
+            const win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+          })
+          .catch(err => toast.error(err.message));
+      } else {
+        fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(res => {
+            if (!res.ok) throw new Error('Error al generar o no hay datos.');
+            return res.blob();
+          })
+          .then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `reporte_${tipo}.${formato === 'csv' ? 'csv' : 'xls'}`;
+            a.click();
+          })
+          .catch(err => toast.error(err.message));
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('reportes');
+      if (!u) return;
+      renderSidebar('reportes');
+    });
+  </script>
+</body>
+</html>

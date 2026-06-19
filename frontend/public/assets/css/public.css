@@ -1,0 +1,899 @@
+/* ================================================================
+   public.css — Estilos del portal público
+   Finca Agroecológica San Camilo — Ambuquí
+   Paleta: verde olivo, dorado miel, crema cálido, café tierra, naranja cítrico
+   ================================================================ */
+
+/* --- Google Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* --- Variables --- */
+:root {
+  --verde-olivo:   #5C6B3A;
+  --verde-bosque:  #3D5229;
+  --verde-hoja:    #8A9E5B;
+  --dorado-miel:   #C9963D;
+  --dorado-claro:  #E8C06A;
+  --crema:         #FAF7F0;
+  --crema-oscuro:  #F0EBE0;
+  --cafe:          #2C2416;
+  --cafe-medio:    #5A4832;
+  --naranja:       #E8873A;
+  --naranja-claro: #F4A86A;
+  --blanco:        #FFFFFF;
+  --sombra:        rgba(44, 36, 22, 0.10);
+  --sombra-media:  rgba(44, 36, 22, 0.18);
+  --radius:        10px;
+  --radius-lg:     18px;
+  --transicion:    0.3s ease;
+  --fuente-titulo: 'Playfair Display', Georgia, serif;
+  --fuente-cuerpo: 'Inter', system-ui, sans-serif;
+}
+
+/* --- Reset y base --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--fuente-cuerpo);
+  background-color: var(--crema);
+  color: var(--cafe);
+  line-height: 1.65;
+  font-size: 16px;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--fuente-titulo);
+  color: var(--verde-bosque);
+  line-height: 1.25;
+}
+
+p { color: var(--cafe-medio); }
+
+a { color: var(--verde-olivo); text-decoration: none; }
+a:hover { color: var(--dorado-miel); }
+
+img {
+  max-width: 100%; height: auto;
+  /* Fallback si la imagen no carga */
+  background-color: var(--crema-oscuro);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-track { background: var(--crema); }
+::-webkit-scrollbar-thumb { background: var(--verde-hoja); border-radius: 4px; }
+
+/* ================================================================
+   NAVBAR
+   ================================================================ */
+.navbar-san-camilo {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--verde-bosque);
+  border-bottom: 3px solid var(--dorado-miel);
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.navbar-logo-icon {
+  width: 42px;
+  height: 42px;
+  background: var(--dorado-miel);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--verde-bosque);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.navbar-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.navbar-logo-text strong {
+  font-family: var(--fuente-titulo);
+  font-size: 1.1rem;
+  color: var(--blanco);
+  font-weight: 700;
+}
+
+.navbar-logo-text span {
+  font-size: 0.72rem;
+  color: var(--dorado-claro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.navbar-nav a {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius);
+  transition: color var(--transicion), background-color var(--transicion);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.navbar-nav a:hover,
+.navbar-nav a.activo {
+  background-color: rgba(201,150,61,0.2);
+  color: var(--dorado-claro);
+}
+
+.navbar-cta {
+  background: var(--dorado-miel) !important;
+  color: var(--cafe) !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius) !important;
+}
+
+.navbar-cta:hover {
+  background: var(--dorado-claro) !important;
+  color: var(--cafe) !important;
+}
+
+/* ================================================================
+   HERO / BANNER PRINCIPAL
+   ================================================================ */
+.hero {
+  position: relative;
+  min-height: 92vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&auto=format&fit=crop');
+  /* TODO: reemplazar por fotografía real del negocio — apiario de la finca */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  filter: brightness(0.45);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(61, 82, 41, 0.75) 0%,
+    rgba(44, 36, 22, 0.55) 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+  padding: 2rem 2rem 2rem 4rem;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dorado-claro);
+  margin-bottom: 1.25rem;
+  background: rgba(201,150,61,0.15);
+  border: 1px solid rgba(201,150,61,0.4);
+  padding: 0.35rem 0.85rem;
+  border-radius: 100px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  color: var(--blanco);
+  margin-bottom: 1.25rem;
+  line-height: 1.15;
+}
+
+.hero h1 span { color: var(--dorado-claro); }
+
+.hero p {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 2rem;
+  max-width: 520px;
+}
+
+.hero-botones {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ================================================================
+   BOTONES
+   ================================================================ */
+.btn-primario {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--dorado-miel);
+  color: var(--cafe);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--dorado-miel);
+  cursor: pointer;
+  transition: all var(--transicion);
+  text-decoration: none;
+  font-family: var(--fuente-cuerpo);
+}
+
+.btn-primario:hover {
+  background: var(--dorado-claro);
+  border-color: var(--dorado-claro);
+  color: var(--cafe);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(201,150,61,0.4);
+}
+
+.btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--blanco);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.73rem 1.75rem;
+  border-radius: var(--radius);
+  border: 2px solid rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: all var(--transicion);
+  text-decoration: none;
+}
+
+.btn-secundario:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--blanco);
+  color: var(--blanco);
+}
+
+.btn-verde {
+  background: var(--verde-olivo);
+  color: var(--blanco);
+  border-color: var(--verde-olivo);
+}
+
+.btn-verde:hover {
+  background: var(--verde-bosque);
+  border-color: var(--verde-bosque);
+  color: var(--blanco);
+}
+
+/* ================================================================
+   SECCIONES GENERALES
+   ================================================================ */
+.seccion {
+  padding: 5rem 2rem;
+}
+
+.seccion-crema    { background-color: var(--crema); }
+.seccion-blanca   { background-color: var(--blanco); }
+.seccion-oscura   { background-color: var(--crema-oscuro); }
+.seccion-verde    { background-color: var(--verde-bosque); }
+
+.seccion-header {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 3.5rem;
+}
+
+.seccion-eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dorado-miel);
+  margin-bottom: 0.75rem;
+}
+
+.seccion-titulo {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700;
+  color: var(--verde-bosque);
+  margin-bottom: 1rem;
+}
+
+.seccion-verde .seccion-titulo { color: var(--blanco); }
+.seccion-verde .seccion-eyebrow { color: var(--dorado-claro); }
+.seccion-verde p { color: rgba(255,255,255,0.75); }
+
+.seccion-descripcion {
+  font-size: 1.05rem;
+  color: var(--cafe-medio);
+  line-height: 1.7;
+}
+
+.contenedor {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ================================================================
+   DIVISOR DECORATIVO
+   ================================================================ */
+.divisor {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 1.5rem;
+  justify-content: center;
+}
+
+.divisor-linea {
+  flex: 1;
+  max-width: 80px;
+  height: 2px;
+  background: var(--dorado-miel);
+  opacity: 0.5;
+}
+
+.divisor-icono {
+  color: var(--dorado-miel);
+  font-size: 1rem;
+}
+
+/* ================================================================
+   TARJETAS DE PRODUCTOS
+   ================================================================ */
+.grid-productos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.tarjeta-producto {
+  background: var(--blanco);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(201,150,61,0.15);
+  box-shadow: 0 2px 12px var(--sombra);
+  transition: transform var(--transicion), box-shadow var(--transicion);
+}
+
+.tarjeta-producto:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px var(--sombra-media);
+}
+
+.tarjeta-producto-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background-color: var(--crema-oscuro);
+}
+
+.tarjeta-producto-img-placeholder {
+  width: 100%;
+  height: 180px;
+  background: var(--crema-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--verde-hoja);
+  font-size: 2.5rem;
+}
+
+.tarjeta-producto-cuerpo {
+  padding: 1.25rem;
+}
+
+.tarjeta-producto-categoria {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--verde-hoja);
+  margin-bottom: 0.35rem;
+}
+
+.tarjeta-producto-nombre {
+  font-family: var(--fuente-titulo);
+  font-size: 1.15rem;
+  color: var(--verde-bosque);
+  margin-bottom: 0.5rem;
+}
+
+.tarjeta-producto-descripcion {
+  font-size: 0.85rem;
+  color: var(--cafe-medio);
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tarjeta-producto-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tarjeta-producto-precio {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--dorado-miel);
+}
+
+.tarjeta-producto-unidad {
+  font-size: 0.75rem;
+  color: var(--cafe-medio);
+  font-weight: 400;
+}
+
+.badge-disponible { background: rgba(92,107,58,0.1); color: var(--verde-olivo); font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 100px; font-weight: 600; }
+.badge-bajo-stock { background: rgba(232,135,58,0.1); color: var(--naranja); font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 100px; font-weight: 600; }
+
+/* ================================================================
+   TARJETAS DE HOSPEDAJE
+   ================================================================ */
+.grid-hospedaje {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.tarjeta-hospedaje {
+  background: var(--blanco);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(201,150,61,0.15);
+  box-shadow: 0 2px 12px var(--sombra);
+  transition: transform var(--transicion), box-shadow var(--transicion);
+}
+
+.tarjeta-hospedaje:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 36px var(--sombra-media);
+}
+
+.tarjeta-hospedaje-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: var(--crema-oscuro);
+}
+
+.tarjeta-hospedaje-cuerpo { padding: 1.5rem; }
+
+.tarjeta-hospedaje-tipo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dorado-miel);
+  margin-bottom: 0.4rem;
+}
+
+.tarjeta-hospedaje-nombre {
+  font-family: var(--fuente-titulo);
+  font-size: 1.35rem;
+  color: var(--verde-bosque);
+  margin-bottom: 0.6rem;
+}
+
+.tarjeta-hospedaje-descripcion {
+  font-size: 0.9rem;
+  color: var(--cafe-medio);
+  margin-bottom: 1.25rem;
+}
+
+.tarjeta-hospedaje-datos {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.dato-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--cafe-medio);
+}
+
+.dato-item i { color: var(--verde-hoja); width: 14px; text-align: center; }
+
+.tarjeta-hospedaje-tarifa {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-bottom: 1.25rem;
+}
+
+.tarifa-precio {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dorado-miel);
+}
+
+.tarifa-noche {
+  font-size: 0.82rem;
+  color: var(--cafe-medio);
+}
+
+/* ================================================================
+   FORMULARIO DE CONTACTO / SOLICITUD
+   ================================================================ */
+.form-grupo {
+  margin-bottom: 1.25rem;
+}
+
+.form-etiqueta {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--cafe);
+  margin-bottom: 0.4rem;
+}
+
+.form-campo {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid rgba(92,107,58,0.25);
+  border-radius: var(--radius);
+  background: var(--blanco);
+  color: var(--cafe);
+  font-family: var(--fuente-cuerpo);
+  font-size: 0.93rem;
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+  outline: none;
+}
+
+.form-campo:focus {
+  border-color: var(--verde-olivo);
+  box-shadow: 0 0 0 3px rgba(92,107,58,0.12);
+}
+
+.form-campo::placeholder { color: rgba(90,72,50,0.45); }
+
+textarea.form-campo { min-height: 120px; resize: vertical; }
+
+select.form-campo { appearance: none; cursor: pointer; }
+
+.form-ayuda { font-size: 0.78rem; color: var(--cafe-medio); margin-top: 0.25rem; }
+
+.form-radio-grupo {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.form-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--cafe);
+}
+
+.form-radio input[type="radio"] { accent-color: var(--verde-olivo); }
+
+/* Upload de comprobante */
+.upload-zona {
+  border: 2px dashed rgba(92,107,58,0.35);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--crema);
+  transition: border-color var(--transicion), background var(--transicion);
+}
+
+.upload-zona:hover {
+  border-color: var(--verde-olivo);
+  background: rgba(92,107,58,0.04);
+}
+
+.upload-zona i { font-size: 1.8rem; color: var(--verde-hoja); margin-bottom: 0.5rem; }
+.upload-zona p { font-size: 0.85rem; color: var(--cafe-medio); }
+.upload-zona input { display: none; }
+
+/* ================================================================
+   SECCIÓN APIARIO / INFORMACIÓN
+   ================================================================ */
+.apiario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.apiario-imagen {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 32px var(--sombra-media);
+}
+
+.apiario-imagen img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+}
+
+.apiario-lista {
+  list-style: none;
+  margin-top: 1.5rem;
+}
+
+.apiario-lista li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(92,107,58,0.1);
+  font-size: 0.95rem;
+  color: var(--cafe-medio);
+}
+
+.apiario-lista li:last-child { border-bottom: none; }
+
+.apiario-lista li i {
+  color: var(--verde-hoja);
+  margin-top: 0.15rem;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   GALERÍA
+   ================================================================ */
+.galeria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.galeria-item {
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  cursor: pointer;
+  position: relative;
+  background: var(--crema-oscuro);
+}
+
+.galeria-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.galeria-item:hover img { transform: scale(1.06); }
+
+.galeria-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(44,36,22,0.7), transparent);
+  opacity: 0;
+  transition: opacity var(--transicion);
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+}
+
+.galeria-item:hover .galeria-overlay { opacity: 1; }
+
+.galeria-overlay span {
+  color: var(--blanco);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* ================================================================
+   MAPA / UBICACIÓN
+   ================================================================ */
+.mapa-contenedor {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 4px 20px var(--sombra);
+  height: 380px;
+}
+
+.mapa-contenedor iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.ubicacion-datos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.dato-contacto {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: var(--blanco);
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  border-left: 3px solid var(--dorado-miel);
+}
+
+.dato-contacto-icono {
+  width: 42px;
+  height: 42px;
+  background: rgba(201,150,61,0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dorado-miel);
+  flex-shrink: 0;
+}
+
+.dato-contacto-texto strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--verde-bosque);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.2rem;
+}
+
+.dato-contacto-texto span {
+  font-size: 0.92rem;
+  color: var(--cafe-medio);
+}
+
+/* ================================================================
+   TOAST NOTIFICACIONES
+   ================================================================ */
+.toast-contenedor {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  padding: 0.9rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--cafe);
+  color: var(--blanco);
+  font-size: 0.88rem;
+  border-left: 4px solid var(--dorado-miel);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  max-width: 340px;
+  animation: aparecer 0.3s ease;
+}
+
+.toast.exito   { border-left-color: var(--verde-hoja); }
+.toast.error   { border-left-color: #C0392B; }
+
+@keyframes aparecer { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+/* ================================================================
+   FOOTER
+   ================================================================ */
+.footer {
+  background: var(--verde-bosque);
+  color: rgba(255,255,255,0.75);
+  padding: 3rem 2rem 1.5rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 2.5rem;
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+}
+
+.footer-marca strong {
+  font-family: var(--fuente-titulo);
+  font-size: 1.3rem;
+  color: var(--blanco);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.footer-marca p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: 0.5rem;
+  line-height: 1.6;
+}
+
+.footer h4 {
+  font-family: var(--fuente-cuerpo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dorado-claro);
+  margin-bottom: 1rem;
+}
+
+.footer-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer-nav a {
+  color: rgba(255,255,255,0.65);
+  font-size: 0.9rem;
+  transition: color var(--transicion);
+}
+
+.footer-nav a:hover { color: var(--dorado-claro); }
+
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 1.25rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 900px) {
+  .apiario-grid    { grid-template-columns: 1fr; }
+  .footer-grid     { grid-template-columns: 1fr; gap: 1.5rem; }
+  .ubicacion-datos { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .hero-content    { padding: 1.5rem; }
+  .seccion         { padding: 3.5rem 1.25rem; }
+  .navbar-san-camilo { padding: 0.65rem 1rem; }
+  .hero-botones    { flex-direction: column; }
+  .hero-botones a  { text-align: center; justify-content: center; }
+}

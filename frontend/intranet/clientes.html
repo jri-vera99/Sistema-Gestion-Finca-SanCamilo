@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Clientes — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+  <style>
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+    .modal.activo { display: flex; }
+    .modal-content { background: var(--blanco); border-radius: var(--radio-lg); width: 100%; max-width: 500px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-header { background: var(--fondo); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borde); }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; background: var(--fondo); display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--borde); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-users"></i> Clientes</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Directorio de Clientes</div>
+            <button class="btn btn-primario" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Nuevo Cliente</button>
+          </div>
+          <div class="tabla-contenedor">
+            <table class="tabla-datos">
+              <thead><tr><th>ID</th><th>Nombres</th><th>Cédula/RUC</th><th>Correo</th><th>Teléfono</th></tr></thead>
+              <tbody id="lista-clientes"><tr><td colspan="5" style="text-align:center;">Cargando clientes...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-cliente">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="margin:0;font-size:1.1rem;color:var(--verde-bosque);">Registrar Cliente</h3>
+        <button class="btn btn-outline" style="border:none;padding:0.2rem 0.5rem;" onclick="cerrarModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <form id="form-cliente">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nombre Completo</label>
+            <input type="text" id="nombres" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cédula o RUC</label>
+            <input type="text" id="cedula" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" id="correo" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input type="text" id="telefono" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-contenedor" id="toast-contenedor"></div>
+
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { api, toast } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+
+    window.abrirModal = () => {
+      document.getElementById('form-cliente').reset();
+      document.getElementById('modal-cliente').classList.add('activo');
+    };
+    window.cerrarModal = () => document.getElementById('modal-cliente').classList.remove('activo');
+
+    async function cargar() {
+      const res = await api.get('/intranet/clientes');
+      const tbody = document.getElementById('lista-clientes');
+      if (res?.success && res.data?.length) {
+        tbody.innerHTML = res.data.map(c => `<tr>
+          <td>${c.id_cliente}</td>
+          <td>${c.nombres || ''} ${c.apellidos || ''}</td>
+          <td>${c.cedula || c.cedula_ruc || ''}</td>
+          <td>${c.correo || ''}</td>
+          <td>${c.telefono || ''}</td>
+        </tr>`).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay clientes registrados.</td></tr>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('clientes');
+      if (!u) return;
+      renderSidebar('clientes');
+      await cargar();
+    });
+
+    document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        nombres: document.getElementById('nombres').value,
+        cedula: document.getElementById('cedula').value,
+        correo: document.getElementById('correo').value,
+        telefono: document.getElementById('telefono').value
+      };
+      const res = await api.post('/intranet/clientes', body);
+      if (res?.success) {
+        toast.exito(res.message);
+        cerrarModal();
+        cargar();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!-- ============================================================
+       index.html — Frontend del Sistema de Gestión SECAP
+       Usa los campos REALES de la base de datos Railway:
+         Colmenas:          id_colmena, id_usuario_responsable,
+                            ubicacion_lat, ubicacion_long, estado_salud,
+                            dias_activas, edad_reina, ultima_extraccion, modo
+         Reservas:          id_reserva, id_cliente, id_habitacion, id_usuario,
+                            fecha_inicio, fecha_fin, estado_reserva, total, modo
+         Cosechas:          id_cosecha, id_colmena, id_usuario,
+                            tipo_producto, cantidad, fecha_cosecha, modo
+         Inventario_Frutas: id_inventario, id_tipo_fruta, id_usuario,
+                            cantidad, unidad_medida, fecha_registro, modo
+         Clientes:          id_cliente, nombres, cedula, correo, telefono
+       ============================================================ -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sistema de Gestión de Colmenas y Productos Agropecuarios SECAP — Panel de pruebas Railway." />
+  <title>🐝 SECAP — Sistema de Gestión Agropecuario</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --honey:       #f59e0b;
+      --honey-dark:  #d97706;
+      --green:       #10b981;
+      --green-dark:  #059669;
+      --bg-dark:     #0f172a;
+      --bg-card:     #1e293b;
+      --bg-card2:    #263348;
+      --text-main:   #f1f5f9;
+      --text-muted:  #94a3b8;
+      --border:      rgba(245,158,11,0.15);
+      --glow:        rgba(245,158,11,0.25);
+      --radius:      14px;
+      --radius-sm:   8px;
+      --transition:  0.3s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; }
+
+    /* ── Navbar ── */
+    .navbar-secap {
+      background: linear-gradient(135deg,#0f172a,#1a2540);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 24px rgba(0,0,0,.4);
+      padding: .85rem 1.5rem;
+      position: sticky; top: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap:.5rem;
+    }
+    .navbar-brand { font-size:1.35rem; font-weight:800; color:var(--honey) !important; letter-spacing:-.5px; }
+    .navbar-brand span { color:var(--text-main); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f2e1a 100%);
+      border-bottom:1px solid var(--border);
+      padding:2.5rem 1.5rem 2rem; text-align:center; position:relative; overflow:hidden;
+    }
+    .hero::before { content:'🐝'; position:absolute; font-size:12rem; opacity:.04; top:-2rem; right:3rem; animation:float 6s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+    .hero h1 { font-size:clamp(1.6rem,4vw,2.5rem); font-weight:800;
+      background:linear-gradient(135deg,var(--honey),#fbbf24,var(--green));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:.4rem; }
+    .hero p { color:var(--text-muted); font-size:1rem; }
+
+    /* ── Status bar ── */
+    .status-bar { display:flex; align-items:center; gap:.5rem; padding:.45rem .9rem;
+      background:var(--bg-card); border:1px solid var(--border); border-radius:100px;
+      font-size:.82rem; width:fit-content; }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#ef4444; animation:pulse-red 2s infinite; }
+    .status-dot.connected { background:var(--green); animation:pulse-green 2s infinite; }
+    @keyframes pulse-red   { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5)} 70%{box-shadow:0 0 0 6px transparent} }
+
+    /* ── Stats ── */
+    .stat-card { background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:1.1rem; text-align:center; transition:transform var(--transition),box-shadow var(--transition); }
+    .stat-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px var(--glow); }
+    .stat-card .stat-value { font-size:1.9rem; font-weight:800; color:var(--honey); line-height:1; }
+    .stat-card .stat-label { font-size:.75rem; color:var(--text-muted); margin-top:.3rem; }
+
+    /* ── Modo filter tabs ── */
+    .modo-tabs { display:flex; gap:.4rem; flex-wrap:wrap; }
+    .modo-btn { padding:.4rem 1rem; border-radius:100px; border:1px solid var(--border); background:var(--bg-card2);
+      color:var(--text-muted); font-size:.83rem; font-weight:500; cursor:pointer; transition:var(--transition); }
+    .modo-btn:hover, .modo-btn.active { background:var(--honey); color:#000; border-color:var(--honey); }
+
+    /* ── Section cards ── */
+    .section-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:1.6rem; margin-bottom:1.5rem; transition:box-shadow var(--transition); }
+    .section-card:hover { box-shadow:0 0 32px var(--glow); }
+    .card-title { font-size:1.05rem; font-weight:700; color:var(--honey); margin-bottom:1.2rem;
+      display:flex; align-items:center; gap:.6rem; }
+
+    /* ── Tabla ── */
+    .data-table { width:100%; border-collapse:separate; border-spacing:0; font-size:.86rem; }
+    .data-table thead tr th { background:var(--bg-card2); color:var(--honey); font-weight:600;
+      padding:.7rem .9rem; border-bottom:2px solid var(--border); white-space:nowrap; }
+    .data-table tbody tr td { padding:.65rem .9rem; border-bottom:1px solid rgba(255,255,255,.04);
+      color:var(--text-main); vertical-align:middle; }
+    .data-table tbody tr:hover { background:rgba(245,158,11,.05); }
+    .data-table tbody tr:last-child td { border-bottom:none; }
+
+    /* ── Formularios ── */
+    .form-label { color:var(--text-muted); font-size:.8rem; font-weight:500; margin-bottom:.25rem; }
+    .form-control, .form-select { background:var(--bg-card2)!important; border:1px solid var(--border)!important;
+      color:var(--text-main)!important; border-radius:var(--radius-sm)!important; font-size:.88rem;
+      transition:border-color var(--transition),box-shadow var(--transition); }
+    .form-control:focus, .form-select:focus { border-color:var(--honey)!important; box-shadow:0 0 0 3px var(--glow)!important; }
+    .form-control option, .form-select option { background:var(--bg-card2); }
+    .form-text { color:var(--text-muted); font-size:.75rem; }
+
+    /* ── Botones ── */
+    .btn-honey { background:linear-gradient(135deg,var(--honey),var(--honey-dark)); border:none; color:#000;
+      font-weight:700; border-radius:var(--radius-sm); padding:.5rem 1.1rem; font-size:.88rem;
+      transition:transform var(--transition),box-shadow var(--transition); }
+    .btn-honey:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(245,158,11,.5); color:#000; }
+    .btn-green { background:linear-gradient(135deg,var(--green),var(--green-dark)); border:none; color:#fff;
+      font-weight:600; border-radius:var(--radius-sm); padding:.5rem 1.1rem; font-size:.88rem;
+      transition:transform var(--transition),box-shadow var(--transition); }
+    .btn-green:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(16,185,129,.4); color:#fff; }
+
+    /* ── Badges ── */
+    .badge-simulado { background:rgba(16,185,129,.15); color:#34d399; border:1px solid #34d39944; padding:.25em .6em; border-radius:6px; font-size:.78rem; }
+    .badge-real     { background:rgba(59,130,246,.15);  color:#60a5fa; border:1px solid #60a5fa44; padding:.25em .6em; border-radius:6px; font-size:.78rem; }
+
+    /* ── Loading / Toast ── */
+    .loading-row td { text-align:center; color:var(--text-muted); padding:2rem!important; }
+    .spinner { width:26px; height:26px; border:3px solid rgba(245,158,11,.2); border-top-color:var(--honey);
+      border-radius:50%; animation:spin .8s linear infinite; display:inline-block; margin-right:.4rem; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .toast-container { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; }
+    .toast-item { background:var(--bg-card); border-left:4px solid var(--honey); border-radius:var(--radius-sm);
+      padding:.8rem 1.1rem; margin-top:.5rem; font-size:.86rem; animation:slideIn .3s ease;
+      box-shadow:0 8px 24px rgba(0,0,0,.5); max-width:340px; }
+    .toast-item.success { border-left-color:var(--green); }
+    .toast-item.error   { border-left-color:#ef4444; }
+    @keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    /* ── Tabs ── */
+    .nav-secap .nav-link { color:var(--text-muted); border-radius:var(--radius-sm)!important;
+      font-weight:500; font-size:.9rem; padding:.45rem .9rem; }
+    .nav-secap .nav-link.active,.nav-secap .nav-link:hover { background:rgba(245,158,11,.15)!important; color:var(--honey)!important; }
+
+    footer { text-align:center; padding:2rem; color:var(--text-muted); font-size:.8rem;
+      border-top:1px solid var(--border); margin-top:2rem; }
+
+    @media(max-width:768px) { .hero{padding:1.8rem 1rem 1.5rem;} .section-card{padding:1.1rem;} }
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-track{background:var(--bg-dark);}
+    ::-webkit-scrollbar-thumb{background:var(--honey-dark);border-radius:3px;}
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar-secap">
+  <div class="navbar-brand">🐝 SECAP <span>— Panel de Gestión</span></div>
+  <div id="apiStatus" class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Verificando conexión…</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Sistema de Gestión Agropecuario</h1>
+  <p>Colmenas · Cosechas · Inventario de Frutas · Reservas · Clientes · Railway MySQL</p>
+</div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container-fluid px-3 px-md-4 py-4" style="max-width:1400px;margin:0 auto;">
+
+  <!-- Stats rápidas -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value" id="statColmenas">—</div>
+        <div class="stat-label"><i class="fas fa-cube me-1"></i>Colmenas</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value" id="statReservas">—</div>
+        <div class="stat-label"><i class="fas fa-calendar me-1"></i>Reservas</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value" id="statCosechas">—</div>
+        <div class="stat-label"><i class="fas fa-leaf me-1"></i>Cosechas</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-value" id="statClientes">—</div>
+        <div class="stat-label"><i class="fas fa-users me-1"></i>Clientes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs de navegación -->
+  <ul class="nav nav-pills nav-secap mb-4 flex-wrap gap-1" id="mainTabs">
+    <li class="nav-item"><a class="nav-link active" href="#" data-tab="colmenas"   id="tab-colmenas">🍯 Colmenas</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#" data-tab="reservas"   id="tab-reservas">🏠 Reservas</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#" data-tab="cosechas"   id="tab-cosechas">🌿 Cosechas</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#" data-tab="inventario" id="tab-inventario">🍊 Inventario</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#" data-tab="clientes"   id="tab-clientes">👥 Clientes</a></li>
+  </ul>
+
+  <!-- ══════════════════ COLMENAS ══════════════════ -->
+  <div id="section-colmenas">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-th-large"></i> Lista de Colmenas</div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="modo-tabs" id="modoFilterColmenas">
+              <button class="modo-btn active" data-modo=""         onclick="setFiltro('colmenas','')">Todos</button>
+              <button class="modo-btn"        data-modo="real"     onclick="setFiltro('colmenas','real')">🔵 Real</button>
+              <button class="modo-btn"        data-modo="simulado" onclick="setFiltro('colmenas','simulado')">🟢 Simulado</button>
+            </div>
+            <button class="btn btn-sm btn-honey" onclick="loadColmenas()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#ID</th><th>Lat</th><th>Long</th>
+                  <th>Estado Salud</th><th>Días Activas</th>
+                  <th>Edad Reina</th><th>Últ. Extracción</th>
+                  <th>Responsable</th><th>Modo</th>
+                </tr>
+              </thead>
+              <tbody id="bodyColmenas">
+                <tr class="loading-row"><td colspan="9"><div class="spinner"></div> Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <!-- Formulario nueva colmena -->
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-plus-circle"></i> Agregar Colmena</div>
+          <form id="formColmena" onsubmit="submitColmena(event)">
+            <div class="mb-3">
+              <label class="form-label">ID Usuario Responsable</label>
+              <input type="number" class="form-control" id="colUsuario" placeholder="Ej: 1" />
+              <div class="form-text">Opcional — debe existir en la tabla Usuarios</div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <label class="form-label">Latitud *</label>
+                <input type="number" step="0.000001" class="form-control" id="colLat" placeholder="-1.831239" required />
+              </div>
+              <div class="col">
+                <label class="form-label">Longitud *</label>
+                <input type="number" step="0.000001" class="form-control" id="colLng" placeholder="-78.183406" required />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Estado de Salud</label>
+              <select class="form-select" id="colSalud">
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+              </select>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <label class="form-label">Días Activas</label>
+                <input type="number" class="form-control" id="colDias" placeholder="0" min="0" />
+              </div>
+              <div class="col">
+                <label class="form-label">Edad Reina (años)</label>
+                <input type="number" class="form-control" id="colReina" placeholder="0" min="0" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Última Extracción</label>
+              <input type="date" class="form-control" id="colExtraccion" />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Modo</label>
+              <select class="form-select" id="colModo">
+                <option value="simulado">🟢 Simulado</option>
+                <option value="real">🔵 Real</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-honey w-100" id="btnSubmitColmena">
+              <i class="fas fa-save me-1"></i> Guardar Colmena
+            </button>
+          </form>
+        </div>
+
+        <!-- Simulación automática -->
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-robot"></i> Simular Automáticamente</div>
+          <p style="color:var(--text-muted);font-size:.83rem;margin-bottom:.9rem;">
+            Genera N colmenas con coordenadas y datos aleatorios.
+          </p>
+          <div class="d-flex gap-2">
+            <input type="number" class="form-control" id="cantSimColmenas" value="5" min="1" max="20" style="width:75px" />
+            <button class="btn btn-green flex-fill" onclick="simularColmenas()">
+              <i class="fas fa-magic me-1"></i> Generar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /colmenas -->
+
+  <!-- ══════════════════ RESERVAS ══════════════════ -->
+  <div id="section-reservas" style="display:none">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-calendar-check"></i> Lista de Reservas</div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="modo-tabs" id="modoFilterReservas">
+              <button class="modo-btn active" data-modo=""         onclick="setFiltro('reservas','')">Todos</button>
+              <button class="modo-btn"        data-modo="real"     onclick="setFiltro('reservas','real')">🔵 Real</button>
+              <button class="modo-btn"        data-modo="simulado" onclick="setFiltro('reservas','simulado')">🟢 Simulado</button>
+            </div>
+            <button class="btn btn-sm btn-honey" onclick="loadReservas()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#ID</th><th>Cliente</th><th>Habitación</th>
+                  <th>F. Inicio</th><th>F. Fin</th>
+                  <th>Estado</th><th>Total</th><th>Modo</th>
+                </tr>
+              </thead>
+              <tbody id="bodyReservas">
+                <tr class="loading-row"><td colspan="8"><div class="spinner"></div> Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-plus-circle"></i> Nueva Reserva</div>
+          <form id="formReserva" onsubmit="submitReserva(event)">
+            <div class="mb-3">
+              <label class="form-label">ID Cliente *</label>
+              <input type="number" class="form-control" id="resCliente" placeholder="Ej: 1" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">ID Habitación *</label>
+              <input type="number" class="form-control" id="resHabitacion" placeholder="Ej: 1" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">ID Usuario (quien registra)</label>
+              <input type="number" class="form-control" id="resUsuario" placeholder="Ej: 1" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Fecha Inicio *</label>
+              <input type="date" class="form-control" id="resFechaInicio" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Fecha Fin *</label>
+              <input type="date" class="form-control" id="resFechaFin" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Estado Reserva</label>
+              <select class="form-select" id="resEstado">
+                <option value="pendiente">Pendiente</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Total ($)</label>
+              <input type="number" step="0.01" class="form-control" id="resTotal" placeholder="0.00" />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Modo</label>
+              <select class="form-select" id="resModo">
+                <option value="simulado">🟢 Simulado</option>
+                <option value="real">🔵 Real</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-honey w-100"><i class="fas fa-save me-1"></i> Guardar Reserva</button>
+          </form>
+        </div>
+
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-robot"></i> Simular Reservas</div>
+          <p style="color:var(--text-muted);font-size:.83rem;margin-bottom:.9rem;">
+            Usa clientes y habitaciones existentes en la BD.
+          </p>
+          <div class="d-flex gap-2">
+            <input type="number" class="form-control" id="cantSimReservas" value="3" min="1" max="10" style="width:75px" />
+            <button class="btn btn-green flex-fill" onclick="simularReservas()"><i class="fas fa-magic me-1"></i> Generar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /reservas -->
+
+  <!-- ══════════════════ COSECHAS ══════════════════ -->
+  <div id="section-cosechas" style="display:none">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-seedling"></i> Registro de Cosechas</div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="modo-tabs" id="modoFilterCosechas">
+              <button class="modo-btn active" data-modo=""         onclick="setFiltro('cosechas','')">Todos</button>
+              <button class="modo-btn"        data-modo="real"     onclick="setFiltro('cosechas','real')">🔵 Real</button>
+              <button class="modo-btn"        data-modo="simulado" onclick="setFiltro('cosechas','simulado')">🟢 Simulado</button>
+            </div>
+            <button class="btn btn-sm btn-honey" onclick="loadCosechas()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr><th>#ID</th><th>ID Colmena</th><th>Usuario</th><th>Tipo Producto</th><th>Cantidad</th><th>Fecha</th><th>Modo</th></tr>
+              </thead>
+              <tbody id="bodyCosechas">
+                <tr class="loading-row"><td colspan="7"><div class="spinner"></div> Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-plus-circle"></i> Registrar Cosecha</div>
+          <form onsubmit="submitCosecha(event)">
+            <div class="mb-3">
+              <label class="form-label">ID Colmena *</label>
+              <input type="number" class="form-control" id="cosColmena" placeholder="Ej: 1" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">ID Usuario</label>
+              <input type="number" class="form-control" id="cosUsuario" placeholder="Ej: 1" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Tipo de Producto *</label>
+              <input type="text" class="form-control" id="cosTipo" placeholder="Ej: miel, cera, propóleo" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Cantidad *</label>
+              <input type="number" step="0.01" class="form-control" id="cosCantidad" placeholder="Ej: 12.5" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Fecha de Cosecha</label>
+              <input type="date" class="form-control" id="cosFecha" />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Modo</label>
+              <select class="form-select" id="cosModo">
+                <option value="simulado">🟢 Simulado</option>
+                <option value="real">🔵 Real</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-honey w-100"><i class="fas fa-save me-1"></i> Registrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div><!-- /cosechas -->
+
+  <!-- ══════════════════ INVENTARIO ══════════════════ -->
+  <div id="section-inventario" style="display:none">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-boxes"></i> Inventario de Frutas</div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="modo-tabs" id="modoFilterInventario">
+              <button class="modo-btn active" data-modo=""         onclick="setFiltro('inventario','')">Todos</button>
+              <button class="modo-btn"        data-modo="real"     onclick="setFiltro('inventario','real')">🔵 Real</button>
+              <button class="modo-btn"        data-modo="simulado" onclick="setFiltro('inventario','simulado')">🟢 Simulado</button>
+            </div>
+            <button class="btn btn-sm btn-honey" onclick="loadInventario()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr><th>#ID</th><th>Fruta</th><th>Cantidad</th><th>Unidad</th><th>F. Registro</th><th>Usuario</th><th>Modo</th></tr>
+              </thead>
+              <tbody id="bodyInventario">
+                <tr class="loading-row"><td colspan="7"><div class="spinner"></div> Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="section-card">
+          <div class="card-title"><i class="fas fa-plus-circle"></i> Agregar al Inventario</div>
+          <form onsubmit="submitInventario(event)">
+            <div class="mb-3">
+              <label class="form-label">ID Tipo Fruta *</label>
+              <input type="number" class="form-control" id="invTipo" placeholder="Ej: 1" required />
+              <div class="form-text">Debe existir en la tabla Tipo_Fruta</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">ID Usuario</label>
+              <input type="number" class="form-control" id="invUsuario" placeholder="Ej: 1" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Cantidad *</label>
+              <input type="number" step="0.01" class="form-control" id="invCantidad" placeholder="Ej: 50" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Unidad de Medida</label>
+              <select class="form-select" id="invUnidad">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="lb">lb</option>
+                <option value="unidad">unidad</option>
+                <option value="caja">caja</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Modo</label>
+              <select class="form-select" id="invModo">
+                <option value="simulado">🟢 Simulado</option>
+                <option value="real">🔵 Real</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-honey w-100"><i class="fas fa-save me-1"></i> Registrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div><!-- /inventario -->
+
+  <!-- ══════════════════ CLIENTES ══════════════════ -->
+  <div id="section-clientes" style="display:none">
+    <div class="section-card">
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="card-title mb-0"><i class="fas fa-users"></i> Clientes Registrados</div>
+        <div class="d-flex gap-2">
+          <input type="text" class="form-control form-control-sm" id="buscarCliente"
+            placeholder="Buscar nombre, cédula o correo…" style="width:220px"
+            onkeyup="loadClientes()" />
+          <button class="btn btn-sm btn-honey" onclick="loadClientes()"><i class="fas fa-sync-alt"></i></button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr><th>#ID</th><th>Nombres</th><th>Cédula</th><th>Correo</th><th>Teléfono</th></tr>
+          </thead>
+          <tbody id="bodyClientes">
+            <tr class="loading-row"><td colspan="5"><div class="spinner"></div> Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /clientes -->
+
+</div><!-- /container -->
+
+<footer>
+  🐝 SECAP — Sistema de Gestión Agropecuario · 2024 · Railway MySQL
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* ==============================================================
+   JavaScript frontend SECAP
+   Todos los campos usan los nombres REALES de Railway:
+     - Colmenas:     ubicacion_lat, ubicacion_long, estado_salud,
+                     dias_activas, edad_reina, ultima_extraccion
+     - Reservas:     fecha_inicio, fecha_fin, estado_reserva, total
+     - Cosechas:     tipo_producto, cantidad, fecha_cosecha
+     - Inventario:   cantidad, unidad_medida, fecha_registro
+     - Clientes:     nombres, cedula, correo, telefono
+   ============================================================== */
+
+const API_BASE = 'http://localhost:3000/api';
+
+// Estado de filtros por sección
+const filtros = { colmenas: '', reservas: '', cosechas: '', inventario: '' };
+
+// ── Utilidades ──────────────────────────────────────────────────
+
+function toast(msg, tipo = 'info') {
+  const c = document.getElementById('toastContainer');
+  const d = document.createElement('div');
+  d.className = `toast-item ${tipo}`;
+  d.innerHTML = `${tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : 'ℹ️'} ${msg}`;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 4500);
+}
+
+function fmt(v)  { if (!v) return '—'; return new Date(v).toLocaleDateString('es-ES'); }
+function curr(v) { return v != null ? `$${parseFloat(v).toFixed(2)}` : '—'; }
+
+function badgeModo(modo) {
+  if (modo === 'simulado') return '<span class="badge-simulado">🟢 Simulado</span>';
+  if (modo === 'real')     return '<span class="badge-real">🔵 Real</span>';
+  return `<small>${modo || '—'}</small>`;
+}
+
+function badgeEstado(e) {
+  const m = { pendiente:'warning', confirmada:'info', cancelada:'danger',
+              bueno:'success', regular:'warning', malo:'danger' };
+  return `<span class="badge bg-${m[e]||'secondary'} bg-opacity-75">${e||'—'}</span>`;
+}
+
+// ── Filtros por modo ────────────────────────────────────────────
+
+function setFiltro(seccion, modo) {
+  filtros[seccion] = modo;
+  const containerId = `modoFilter${seccion.charAt(0).toUpperCase()+seccion.slice(1)}`;
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.querySelectorAll('.modo-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.modo === modo)
+    );
+  }
+  if (seccion === 'colmenas')   loadColmenas();
+  if (seccion === 'reservas')   loadReservas();
+  if (seccion === 'cosechas')   loadCosechas();
+  if (seccion === 'inventario') loadInventario();
+}
+
+// ── Health check ────────────────────────────────────────────────
+
+async function checkHealth() {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  try {
+    const res  = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    if (data.success) {
+      dot.classList.add('connected');
+      text.textContent = '✅ API conectada — Railway MySQL';
+    } else {
+      text.textContent = `⚠️ ${data.message}`;
+    }
+  } catch {
+    text.textContent = '❌ API desconectada — ¿node app.js corriendo?';
+  }
+}
+
+// ── Tabs de navegación ──────────────────────────────────────────
+
+const sections = ['colmenas','reservas','cosechas','inventario','clientes'];
+
+document.querySelectorAll('#mainTabs .nav-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const tab = link.dataset.tab;
+    sections.forEach(s => {
+      document.getElementById(`section-${s}`).style.display = 'none';
+      document.getElementById(`tab-${s}`)?.classList.remove('active');
+    });
+    document.getElementById(`section-${tab}`).style.display = 'block';
+    link.classList.add('active');
+    if (tab === 'colmenas')   loadColmenas();
+    if (tab === 'reservas')   loadReservas();
+    if (tab === 'cosechas')   loadCosechas();
+    if (tab === 'inventario') loadInventario();
+    if (tab === 'clientes')   loadClientes();
+  });
+});
+
+// ── COLMENAS ────────────────────────────────────────────────────
+// Tabla Railway: id_colmena, id_usuario_responsable, ubicacion_lat,
+//   ubicacion_long, estado_salud, dias_activas, edad_reina,
+//   ultima_extraccion, modo
+
+async function loadColmenas() {
+  const tbody = document.getElementById('bodyColmenas');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div> Cargando…</td></tr>';
+  try {
+    const url  = filtros.colmenas ? `${API_BASE}/colmenas?modo=${filtros.colmenas}` : `${API_BASE}/colmenas`;
+    const data = await (await fetch(url)).json();
+    document.getElementById('statColmenas').textContent = data.total;
+    if (!data.data.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin registros</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.data.map(c => `
+      <tr>
+        <td><strong>#${c.id_colmena}</strong></td>
+        <td>${parseFloat(c.ubicacion_lat).toFixed(5)}</td>
+        <td>${parseFloat(c.ubicacion_long).toFixed(5)}</td>
+        <td>${badgeEstado(c.estado_salud)}</td>
+        <td>${c.dias_activas ?? '—'}</td>
+        <td>${c.edad_reina ?? '—'} año(s)</td>
+        <td>${fmt(c.ultima_extraccion)}</td>
+        <td>${c.nombre_responsable || `#${c.id_usuario_responsable || '—'}`}</td>
+        <td>${badgeModo(c.modo)}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="9" style="color:#ef4444">❌ ${err.message}</td></tr>`;
+  }
+}
+
+async function submitColmena(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnSubmitColmena');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:15px;height:15px;border-width:2px"></div> Guardando…';
+  try {
+    const body = {
+      id_usuario_responsable: document.getElementById('colUsuario').value    || null,
+      ubicacion_lat:          document.getElementById('colLat').value,
+      ubicacion_long:         document.getElementById('colLng').value,
+      estado_salud:           document.getElementById('colSalud').value,
+      dias_activas:           document.getElementById('colDias').value       || 0,
+      edad_reina:             document.getElementById('colReina').value      || 0,
+      ultima_extraccion:      document.getElementById('colExtraccion').value || null,
+      modo:                   document.getElementById('colModo').value
+    };
+    const data = await (await fetch(`${API_BASE}/colmenas`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    })).json();
+    data.success ? toast(data.message, 'success') : toast(data.error, 'error');
+    if (data.success) { document.getElementById('formColmena').reset(); loadColmenas(); }
+  } catch (err) { toast('Error de red: '+err.message, 'error'); }
+  finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i> Guardar Colmena'; }
+}
+
+async function simularColmenas() {
+  const cantidad = document.getElementById('cantSimColmenas').value;
+  try {
+    const data = await (await fetch(`${API_BASE}/colmenas/simular`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ cantidad: parseInt(cantidad) })
+    })).json();
+    data.success ? toast(data.message,'success') : toast(data.error,'error');
+    if (data.success) loadColmenas();
+  } catch (err) { toast('Error: '+err.message,'error'); }
+}
+
+// ── RESERVAS ────────────────────────────────────────────────────
+// Tabla Railway: id_reserva, id_cliente, id_habitacion, id_usuario,
+//   fecha_inicio, fecha_fin, estado_reserva, total, modo
+
+async function loadReservas() {
+  const tbody = document.getElementById('bodyReservas');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div> Cargando…</td></tr>';
+  try {
+    const url  = filtros.reservas ? `${API_BASE}/reservas?modo=${filtros.reservas}` : `${API_BASE}/reservas`;
+    const data = await (await fetch(url)).json();
+    document.getElementById('statReservas').textContent = data.total;
+    if (!data.data.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin registros</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.data.map(r => `
+      <tr>
+        <td><strong>#${r.id_reserva}</strong></td>
+        <td>${r.nombre_cliente || `ID ${r.id_cliente}`}</td>
+        <td>${r.tipo_habitacion || `#${r.id_habitacion}`}</td>
+        <td>${fmt(r.fecha_inicio)}</td>
+        <td>${fmt(r.fecha_fin)}</td>
+        <td>${badgeEstado(r.estado_reserva)}</td>
+        <td>${curr(r.total)}</td>
+        <td>${badgeModo(r.modo)}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8" style="color:#ef4444">❌ ${err.message}</td></tr>`;
+  }
+}
+
+async function submitReserva(e) {
+  e.preventDefault();
+  try {
+    const body = {
+      id_cliente:    document.getElementById('resCliente').value,
+      id_habitacion: document.getElementById('resHabitacion').value,
+      id_usuario:    document.getElementById('resUsuario').value   || null,
+      fecha_inicio:  document.getElementById('resFechaInicio').value,
+      fecha_fin:     document.getElementById('resFechaFin').value,
+      estado_reserva: document.getElementById('resEstado').value,
+      total:         document.getElementById('resTotal').value     || 0,
+      modo:          document.getElementById('resModo').value
+    };
+    const data = await (await fetch(`${API_BASE}/reservas`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    })).json();
+    data.success ? toast(data.message,'success') : toast(data.error,'error');
+    if (data.success) { document.getElementById('formReserva').reset(); loadReservas(); }
+  } catch (err) { toast('Error: '+err.message,'error'); }
+}
+
+async function simularReservas() {
+  const cantidad = document.getElementById('cantSimReservas').value;
+  try {
+    const data = await (await fetch(`${API_BASE}/reservas/simular`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ cantidad: parseInt(cantidad) })
+    })).json();
+    data.success ? toast(data.message,'success') : toast(data.error,'error');
+    if (data.success) loadReservas();
+  } catch (err) { toast('Error: '+err.message,'error'); }
+}
+
+// ── COSECHAS ────────────────────────────────────────────────────
+// Tabla Railway: id_cosecha, id_colmena, id_usuario,
+//   tipo_producto, cantidad, fecha_cosecha, modo
+
+async function loadCosechas() {
+  const tbody = document.getElementById('bodyCosechas');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div> Cargando…</td></tr>';
+  try {
+    const url  = filtros.cosechas ? `${API_BASE}/cosechas?modo=${filtros.cosechas}` : `${API_BASE}/cosechas`;
+    const data = await (await fetch(url)).json();
+    document.getElementById('statCosechas').textContent = data.total;
+    if (!data.data.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin registros</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.data.map(c => `
+      <tr>
+        <td><strong>#${c.id_cosecha}</strong></td>
+        <td>#${c.id_colmena}</td>
+        <td>${c.nombre_usuario || `#${c.id_usuario||'—'}`}</td>
+        <td>${c.tipo_producto}</td>
+        <td>${c.cantidad}</td>
+        <td>${fmt(c.fecha_cosecha)}</td>
+        <td>${badgeModo(c.modo)}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="7" style="color:#ef4444">❌ ${err.message}</td></tr>`;
+  }
+}
+
+async function submitCosecha(e) {
+  e.preventDefault();
+  try {
+    const body = {
+      id_colmena:    document.getElementById('cosColmena').value,
+      id_usuario:    document.getElementById('cosUsuario').value || null,
+      tipo_producto: document.getElementById('cosTipo').value,
+      cantidad:      document.getElementById('cosCantidad').value,
+      fecha_cosecha: document.getElementById('cosFecha').value || null,
+      modo:          document.getElementById('cosModo').value
+    };
+    const data = await (await fetch(`${API_BASE}/cosechas`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    })).json();
+    data.success ? toast(data.message,'success') : toast(data.error,'error');
+    if (data.success) loadCosechas();
+  } catch (err) { toast('Error: '+err.message,'error'); }
+}
+
+// ── INVENTARIO FRUTAS ────────────────────────────────────────────
+// Tabla Railway: id_inventario, id_tipo_fruta, id_usuario,
+//   cantidad, unidad_medida, fecha_registro, modo
+// Tipo_Fruta:    id_tipo_fruta, nombre_fruta, descripcion
+
+async function loadInventario() {
+  const tbody = document.getElementById('bodyInventario');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div> Cargando…</td></tr>';
+  try {
+    const url  = filtros.inventario ? `${API_BASE}/inventario_frutas?modo=${filtros.inventario}` : `${API_BASE}/inventario_frutas`;
+    const data = await (await fetch(url)).json();
+    if (!data.data.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin registros</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.data.map(i => `
+      <tr>
+        <td><strong>#${i.id_inventario}</strong></td>
+        <td>${i.nombre_fruta || `ID ${i.id_tipo_fruta}`}</td>
+        <td>${i.cantidad}</td>
+        <td>${i.unidad_medida || '—'}</td>
+        <td>${fmt(i.fecha_registro)}</td>
+        <td>${i.nombre_usuario || `#${i.id_usuario||'—'}`}</td>
+        <td>${badgeModo(i.modo)}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="7" style="color:#ef4444">❌ ${err.message}</td></tr>`;
+  }
+}
+
+async function submitInventario(e) {
+  e.preventDefault();
+  try {
+    const body = {
+      id_tipo_fruta: document.getElementById('invTipo').value,
+      id_usuario:    document.getElementById('invUsuario').value  || null,
+      cantidad:      document.getElementById('invCantidad').value,
+      unidad_medida: document.getElementById('invUnidad').value,
+      modo:          document.getElementById('invModo').value
+    };
+    const data = await (await fetch(`${API_BASE}/inventario_frutas`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    })).json();
+    data.success ? toast(data.message,'success') : toast(data.error,'error');
+    if (data.success) loadInventario();
+  } catch (err) { toast('Error: '+err.message,'error'); }
+}
+
+// ── CLIENTES ────────────────────────────────────────────────────
+// Tabla Railway: id_cliente, nombres, cedula, correo, telefono
+
+async function loadClientes() {
+  const tbody   = document.getElementById('bodyClientes');
+  const buscar  = document.getElementById('buscarCliente')?.value || '';
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div> Cargando…</td></tr>';
+  try {
+    const url  = buscar ? `${API_BASE}/clientes?buscar=${encodeURIComponent(buscar)}` : `${API_BASE}/clientes`;
+    const data = await (await fetch(url)).json();
+    document.getElementById('statClientes').textContent = data.total;
+    if (!data.data.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Sin registros</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.data.map(c => `
+      <tr>
+        <td><strong>#${c.id_cliente}</strong></td>
+        <td>${c.nombres || '—'}</td>
+        <td>${c.cedula  || '—'}</td>
+        <td>${c.correo  || '—'}</td>
+        <td>${c.telefono|| '—'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="5" style="color:#ef4444">❌ ${err.message}</td></tr>`;
+  }
+}
+
+// ── Inicialización ───────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  checkHealth();
+  loadColmenas();
+
+  // Valores por defecto en campos de fecha
+  const today    = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  document.getElementById('cosFecha').value       = today;
+  document.getElementById('resFechaInicio').value = today;
+  document.getElementById('resFechaFin').value    = tomorrow;
+});
+</script>
+</body>
+</html>

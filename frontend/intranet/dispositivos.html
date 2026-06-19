@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dispositivos IoT — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+  <style>
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+    .modal.activo { display: flex; }
+    .modal-content { background: var(--blanco); border-radius: var(--radio-lg); width: 100%; max-width: 500px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-header { background: var(--fondo); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borde); }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; background: var(--fondo); display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--borde); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-microchip"></i> Dispositivos IoT</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Gestión de Sensores ESP32</div>
+            <button class="btn btn-primario" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Registrar Dispositivo</button>
+          </div>
+          <div class="tabla-contenedor">
+            <table class="tabla-datos">
+              <thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>MAC</th><th>Token API</th><th>Colmena</th><th>Estado</th></tr></thead>
+              <tbody id="lista-dispositivos"><tr><td colspan="7" style="text-align:center;">Cargando dispositivos...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-dispositivo">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="margin:0;font-size:1.1rem;color:var(--verde-bosque);">Registrar Dispositivo IoT</h3>
+        <button class="btn btn-outline" style="border:none;padding:0.2rem 0.5rem;" onclick="cerrarModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <form id="form-dispositivo">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nombre del Dispositivo</label>
+            <input type="text" id="nombre" class="form-control" required placeholder="Ej: Sensor Humedad 1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select id="tipo" class="form-control" required>
+              <option value="temperatura">Sensor de Temperatura</option>
+              <option value="humedad">Sensor de Humedad</option>
+              <option value="peso">Balanza de Colmena</option>
+              <option value="multisensor">Multisensor (ESP32)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dirección MAC</label>
+            <input type="text" id="mac_address" class="form-control" required placeholder="00:1B:44:11:3A:B7">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vincular a Colmena (Opcional)</label>
+            <select id="id_colmena" class="form-control">
+              <option value="">-- Ninguna --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estado Inicial</label>
+            <select id="estado" class="form-control">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-contenedor" id="toast-contenedor"></div>
+
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { api, toast } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+
+    window.abrirModal = () => {
+      document.getElementById('form-dispositivo').reset();
+      document.getElementById('modal-dispositivo').classList.add('activo');
+    };
+    window.cerrarModal = () => document.getElementById('modal-dispositivo').classList.remove('activo');
+
+    async function cargar() {
+      const res = await api.get('/intranet/dispositivos');
+      const tbody = document.getElementById('lista-dispositivos');
+      if (res?.success) {
+        if (res.colmenas) {
+          document.getElementById('id_colmena').innerHTML = '<option value="">-- Ninguna --</option>' + res.colmenas.map(c => `<option value="${c.id_colmena}">Colmena #${c.id_colmena}</option>`).join('');
+        }
+        if (res.data?.length) {
+          tbody.innerHTML = res.data.map(d => `<tr>
+            <td>${d.id_dispositivo}</td>
+            <td>${d.nombre}</td>
+            <td>${d.tipo}</td>
+            <td>${d.mac_address}</td>
+            <td style="font-family:monospace;font-size:0.85rem;color:#666;">${d.token_api ? d.token_api.substring(0,8)+'...' : '-'}</td>
+            <td>${d.id_colmena ? `Colmena #${d.id_colmena}` : 'Sin vincular'}</td>
+            <td><span class="badge ${d.estado === 'activo' ? 'bg-verde' : 'bg-naranja'}">${d.estado}</span></td>
+          </tr>`).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay dispositivos registrados.</td></tr>';
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('dispositivos');
+      if (!u) return;
+      renderSidebar('dispositivos');
+      await cargar();
+    });
+
+    document.getElementById('form-dispositivo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        nombre: document.getElementById('nombre').value,
+        tipo: document.getElementById('tipo').value,
+        mac_address: document.getElementById('mac_address').value,
+        id_colmena: document.getElementById('id_colmena').value || null,
+        estado: document.getElementById('estado').value
+      };
+      const res = await api.post('/intranet/dispositivos', body);
+      if (res?.success) {
+        toast.exito(res.message);
+        cerrarModal();
+        cargar();
+      }
+    });
+  </script>
+</body>
+</html>

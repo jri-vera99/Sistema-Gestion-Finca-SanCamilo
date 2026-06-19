@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Apiario — Sistema de Gestión San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+  <!-- Leaflet.js para mapas (gratuito, sin API key) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #mapa-colmenas {
+      height: 380px;
+      border-radius: var(--radius);
+      border: 1px solid var(--borde);
+      z-index: 1;
+    }
+    /* Popup del mapa */
+    .leaflet-popup-content h4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--verde-bosque, #3D5229);
+      margin-bottom: 0.35rem;
+    }
+    .leaflet-popup-content p {
+      font-size: 0.78rem;
+      color: #5A4832;
+      margin: 0.15rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Menú del sistema"></aside>
+
+  <div class="main-area">
+    <header class="main-header" role="banner">
+      <div class="page-title">
+        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+        Apiario — Gestión de Colmenas
+      </div>
+      <div class="header-acciones">
+        <button class="btn btn-primario" id="btn-nueva-colmena" onclick="abrirModalNueva()">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          Nueva colmena
+        </button>
+        <button class="btn btn-verde" id="btn-simular" onclick="abrirModalSimular()">
+          <i class="fa-solid fa-robot" aria-hidden="true"></i>
+          Simular
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content" role="main">
+
+      <!-- KPIs de colmenas -->
+      <div class="kpi-grid" id="kpi-colmenas" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.25rem;" aria-label="Resumen del apiario">
+        <div class="kpi-card"><div class="kpi-icono" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></div><div class="kpi-valor" id="kpi-total">—</div><div class="kpi-etiqueta">Total colmenas</div></div>
+        <div class="kpi-card verde"><div class="kpi-icono" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div><div class="kpi-valor" id="kpi-buenas">—</div><div class="kpi-etiqueta">Estado bueno</div></div>
+        <div class="kpi-card rojo"><div class="kpi-icono" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="kpi-valor" id="kpi-criticas">—</div><div class="kpi-etiqueta">Estado crítico</div></div>
+        <div class="kpi-card azul"><div class="kpi-icono" aria-hidden="true"><i class="fa-solid fa-temperature-half"></i></div><div class="kpi-valor" id="kpi-temp">—</div><div class="kpi-etiqueta">Temp. promedio (°C)</div></div>
+      </div>
+
+      <!-- Fila: mapa + tabla -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+
+        <!-- Mapa -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> Ubicaciones GPS</div>
+            <div class="filtros-barra" id="filtros-mapa">
+              <button class="filtro-btn activo" onclick="filtrarMapa('')"  data-modo="">Todos</button>
+              <button class="filtro-btn"        onclick="filtrarMapa('real')"     data-modo="real">Real</button>
+              <button class="filtro-btn"        onclick="filtrarMapa('simulado')" data-modo="simulado">Simulado</button>
+            </div>
+          </div>
+          <div id="mapa-colmenas" aria-label="Mapa con ubicaciones de colmenas"></div>
+        </div>
+
+        <!-- Gráfico estado de salud -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Estado de Salud</div>
+          </div>
+          <canvas id="grafico-salud" height="280" aria-label="Distribución de estado de salud de las colmenas"></canvas>
+        </div>
+
+      </div>
+
+      <!-- Tabla de colmenas -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-titulo"><i class="fa-solid fa-table-list" aria-hidden="true"></i> Registro de Colmenas</div>
+          <div class="filtros-barra" id="filtros-tabla-colmenas">
+            <button class="filtro-btn activo" onclick="setFiltroTabla('')"         data-modo="">Todos</button>
+            <button class="filtro-btn"        onclick="setFiltroTabla('real')"     data-modo="real">Real</button>
+            <button class="filtro-btn"        onclick="setFiltroTabla('simulado')" data-modo="simulado">Simulado</button>
+            <button class="filtro-btn"        onclick="setFiltroTabla('malo')"     data-modo="malo" style="border-color:rgba(192,57,43,0.3);color:var(--rojo);">Críticas</button>
+          </div>
+        </div>
+        <div class="tabla-contenedor">
+          <table class="tabla-datos" role="table" aria-label="Lista de colmenas">
+            <thead>
+              <tr>
+                <th scope="col">#ID</th>
+                <th scope="col">Coordenadas</th>
+                <th scope="col">Estado Salud</th>
+                <th scope="col">Días Activa</th>
+                <th scope="col">Edad Reina</th>
+                <th scope="col">Última Extracción</th>
+                <th scope="col">Temperatura</th>
+                <th scope="col">Responsable</th>
+                <th scope="col">Modo</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-colmenas-body">
+              <tr class="loading-row"><td colspan="10"><div class="spinner" aria-hidden="true"></div> Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── MODAL: Nueva Colmena ─────────────────────────────────── -->
+<div class="modal-overlay" id="modal-nueva" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-nueva">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="titulo-modal-nueva">
+        <i class="fa-solid fa-plus-circle" aria-hidden="true"></i>
+        Registrar Nueva Colmena
+      </div>
+      <button class="modal-cerrar" onclick="cerrarModal('modal-nueva')" aria-label="Cerrar modal">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-cuerpo">
+      <form id="form-nueva-colmena" onsubmit="guardarColmena(event)">
+        <div class="form-grid form-grid-2" style="gap:1rem;">
+          <div class="form-grupo">
+            <label class="form-label" for="nueva-lat">Latitud <span style="color:var(--rojo)" aria-hidden="true">*</span></label>
+            <input type="number" step="any" min="-90" max="90" class="form-campo" id="nueva-lat" placeholder="0.345000" required />
+          </div>
+          <div class="form-grupo">
+            <label class="form-label" for="nueva-lng">Longitud <span style="color:var(--rojo)" aria-hidden="true">*</span></label>
+            <input type="number" step="any" min="-180" max="180" class="form-campo" id="nueva-lng" placeholder="-77.965000" required />
+          </div>
+        </div>
+        <div class="form-grupo" style="margin-top:0.75rem;">
+          <label class="form-label" for="nueva-salud">Estado de salud</label>
+          <select class="form-campo" id="nueva-salud">
+            <option value="bueno">Bueno</option>
+            <option value="regular">Regular</option>
+            <option value="malo">Crítico</option>
+          </select>
+        </div>
+        <div class="form-grid form-grid-2" style="gap:1rem;margin-top:0.75rem;">
+          <div class="form-grupo">
+            <label class="form-label" for="nueva-dias">Días activa</label>
+            <input type="number" class="form-campo" id="nueva-dias" placeholder="0" min="0" value="0" />
+          </div>
+          <div class="form-grupo">
+            <label class="form-label" for="nueva-reina">Edad reina (años)</label>
+            <input type="number" class="form-campo" id="nueva-reina" placeholder="0" min="0" value="0" />
+          </div>
+        </div>
+        <div class="form-grupo" style="margin-top:0.75rem;">
+          <label class="form-label" for="nueva-extraccion">Última extracción</label>
+          <input type="date" class="form-campo" id="nueva-extraccion" />
+        </div>
+        <div class="form-grupo" style="margin-top:0.75rem;">
+          <label class="form-label" for="nueva-observaciones">Observaciones</label>
+          <textarea class="form-campo" id="nueva-observaciones" rows="3" placeholder="Notas del apicultor..."></textarea>
+        </div>
+        <div class="form-grupo" style="margin-top:0.75rem;">
+          <label class="form-label" for="nueva-modo">Modo</label>
+          <select class="form-campo" id="nueva-modo">
+            <option value="real">Real</option>
+            <option value="simulado">Simulado</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" onclick="cerrarModal('modal-nueva')">Cancelar</button>
+      <button class="btn btn-primario" onclick="document.getElementById('form-nueva-colmena').requestSubmit()">
+        <i class="fa-solid fa-save" aria-hidden="true"></i>
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Simular ───────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-simular" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-simular">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="titulo-modal-simular">
+        <i class="fa-solid fa-robot" aria-hidden="true"></i>
+        Generar Colmenas Simuladas
+      </div>
+      <button class="modal-cerrar" onclick="cerrarModal('modal-simular')" aria-label="Cerrar">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-cuerpo">
+      <p style="font-size:0.88rem;color:var(--texto-suave);margin-bottom:1rem;">
+        Genera colmenas con coordenadas y datos aleatorios para pruebas o demostraciones.
+      </p>
+      <div class="form-grupo" style="margin-bottom:1rem;">
+        <label class="form-label" for="sim-cantidad">Cantidad de colmenas</label>
+        <input type="number" class="form-campo" id="sim-cantidad" min="1" max="20" value="5" style="width:120px;" />
+      </div>
+      <div class="form-grupo">
+        <label class="form-label" for="sim-condicion">Condición a simular</label>
+        <select class="form-campo" id="sim-condicion">
+          <option value="">Aleatoria (mix bueno/regular/malo)</option>
+          <option value="critica">Colmenas críticas (todas en estado malo)</option>
+          <option value="alta_produccion">Alta producción (estado bueno)</option>
+          <option value="baja_produccion">Baja producción (estado regular/malo)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" onclick="cerrarModal('modal-simular')">Cancelar</button>
+      <button class="btn btn-verde" id="btn-ejecutar-sim" onclick="ejecutarSimulacion()">
+        <i class="fa-solid fa-play" aria-hidden="true"></i>
+        Generar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-contenedor" id="toast-contenedor" aria-live="polite" aria-atomic="true"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+<script type="module">
+import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+import { api, toast, fmtFecha, badgeModo, badgeEstado, toggleModal } from './assets/js/api.js';
+
+window.logout  = cerrarSesion;
+
+let mapa         = null;
+let marcadores   = [];
+let todosColmenas = [];
+let graficoSalud  = null;
+let filtroActual  = '';
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', async () => {
+  const usuario = await verificarAcceso('colmenas');
+  if (!usuario) return;
+  renderSidebar('colmenas');
+  iniciarMapa();
+  await cargarColmenas();
+});
+
+/* ── Mapa Leaflet ── */
+function iniciarMapa() {
+  // Centro en Ambuquí, Ecuador
+  mapa = L.map('mapa-colmenas').setView([0.345, -77.965], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(mapa);
+}
+
+const iconoVerde = L.divIcon({ className: '', html: '<div style="width:14px;height:14px;background:#5C6B3A;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+const iconoRojo  = L.divIcon({ className: '', html: '<div style="width:14px;height:14px;background:#C0392B;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+const iconoNaranjo = L.divIcon({ className: '', html: '<div style="width:14px;height:14px;background:#E8873A;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+
+/* ── Cargar colmenas ── */
+async function cargarColmenas(modo = '') {
+  const url  = modo && modo !== 'malo' ? `/intranet/colmenas?modo=${modo}` : '/intranet/colmenas';
+  const data = await api.get(url);
+
+  if (!data?.success) {
+    toast('Error al cargar colmenas', 'error');
+    return;
+  }
+
+  let colmenas = data.data;
+
+  // Filtro extra "críticas"
+  if (modo === 'malo') {
+    colmenas = colmenas.filter(c => c.estado_salud === 'malo');
+  }
+
+  todosColmenas = colmenas;
+  actualizarKPIs(colmenas, data.data);
+  renderTabla(colmenas);
+  renderMarcadores(colmenas);
+  renderGraficoSalud(data.data); // gráfico siempre con todos
+}
+
+function actualizarKPIs(colmenas, todos) {
+  document.getElementById('kpi-total').textContent    = todos.length;
+  document.getElementById('kpi-buenas').textContent   = todos.filter(c => c.estado_salud === 'bueno').length;
+  document.getElementById('kpi-criticas').textContent = todos.filter(c => c.estado_salud === 'malo').length;
+
+  const temps = todos.filter(c => c.ultima_temperatura).map(c => parseFloat(c.ultima_temperatura));
+  document.getElementById('kpi-temp').textContent = temps.length
+    ? (temps.reduce((a,b) => a+b, 0) / temps.length).toFixed(1)
+    : '—';
+}
+
+function renderTabla(colmenas) {
+  const tbody = document.getElementById('tabla-colmenas-body');
+  if (!colmenas.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="10">No hay colmenas con este filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = colmenas.map(c => `
+    <tr>
+      <td><strong>#${c.id_colmena}</strong></td>
+      <td style="font-size:0.8rem;color:var(--texto-suave);">
+        ${parseFloat(c.ubicacion_lat).toFixed(4)},<br>
+        ${parseFloat(c.ubicacion_long).toFixed(4)}
+      </td>
+      <td>${badgeEstado(c.estado_salud)}</td>
+      <td>${c.dias_activas ?? '—'} días</td>
+      <td>${c.edad_reina ?? '—'} año(s)</td>
+      <td style="font-size:0.82rem;">${fmtFecha(c.ultima_extraccion)}</td>
+      <td>
+        ${c.ultima_temperatura
+          ? `<span style="font-weight:600;color:${parseFloat(c.ultima_temperatura)<30||parseFloat(c.ultima_temperatura)>40?'var(--rojo)':'var(--verde)'}">
+               ${parseFloat(c.ultima_temperatura).toFixed(1)}°C
+             </span>`
+          : '—'}
+      </td>
+      <td style="font-size:0.82rem;">${c.nombre_responsable || '—'}</td>
+      <td>${badgeModo(c.modo)}</td>
+      <td>
+        <div style="display:flex;gap:0.35rem;">
+          <button class="btn btn-icono btn-sm" onclick="verMapa(${c.id_colmena})" title="Ver en mapa" aria-label="Ver colmena ${c.id_colmena} en mapa">
+            <i class="fa-solid fa-map-pin" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-icono btn-sm" onclick="desactivarColmena(${c.id_colmena})" title="Desactivar" aria-label="Desactivar colmena ${c.id_colmena}">
+            <i class="fa-solid fa-power-off" aria-hidden="true"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderMarcadores(colmenas) {
+  marcadores.forEach(m => mapa.removeLayer(m));
+  marcadores = [];
+
+  colmenas.forEach(c => {
+    const lat  = parseFloat(c.ubicacion_lat);
+    const lng  = parseFloat(c.ubicacion_long);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    const icono = c.estado_salud === 'malo'
+      ? iconoRojo
+      : c.estado_salud === 'regular'
+        ? iconoNaranjo
+        : iconoVerde;
+
+    const popup = `
+      <h4>Colmena #${c.id_colmena}</h4>
+      <p><strong>Salud:</strong> ${c.estado_salud}</p>
+      <p><strong>Días activa:</strong> ${c.dias_activas ?? '—'}</p>
+      ${c.ultima_temperatura ? `<p><strong>Temp.:</strong> ${parseFloat(c.ultima_temperatura).toFixed(1)}°C</p>` : ''}
+      <p><strong>Modo:</strong> ${c.modo}</p>
+    `;
+
+    const marker = L.marker([lat, lng], { icon: icono })
+      .addTo(mapa)
+      .bindPopup(popup, { maxWidth: 200 });
+
+    marcadores.push(marker);
+  });
+
+  if (marcadores.length) {
+    const group = L.featureGroup(marcadores);
+    mapa.fitBounds(group.getBounds().pad(0.2));
+  }
+}
+
+function renderGraficoSalud(colmenas) {
+  const buenas  = colmenas.filter(c => c.estado_salud === 'bueno').length;
+  const regulares = colmenas.filter(c => c.estado_salud === 'regular').length;
+  const malas   = colmenas.filter(c => c.estado_salud === 'malo').length;
+
+  if (graficoSalud) graficoSalud.destroy();
+
+  graficoSalud = new Chart(document.getElementById('grafico-salud'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Bueno', 'Regular', 'Crítico'],
+      datasets: [{
+        data: [buenas, regulares, malas],
+        backgroundColor: ['#5C6B3A', '#E8873A', '#C0392B'],
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '62%',
+      plugins: {
+        legend: { labels: { font: { family: 'Inter', size: 12 }, color: '#5A4832', padding: 16 } }
+      }
+    }
+  });
+}
+
+/* ── Filtros ── */
+function setFiltroTabla(modo) {
+  filtroActual = modo;
+  document.querySelectorAll('#filtros-tabla-colmenas .filtro-btn').forEach(b =>
+    b.classList.toggle('activo', b.dataset.modo === modo));
+  cargarColmenas(modo);
+}
+
+function filtrarMapa(modo) {
+  document.querySelectorAll('#filtros-mapa .filtro-btn').forEach(b =>
+    b.classList.toggle('activo', b.dataset.modo === modo));
+  const filtradas = modo ? todosColmenas.filter(c => c.modo === modo) : todosColmenas;
+  renderMarcadores(filtradas);
+}
+
+/* ── Ver en mapa ── */
+function verMapa(id) {
+  const c = todosColmenas.find(x => x.id_colmena === id);
+  if (!c) return;
+  mapa.setView([parseFloat(c.ubicacion_lat), parseFloat(c.ubicacion_long)], 16);
+  const marker = marcadores.find(m => {
+    const ll = m.getLatLng();
+    return Math.abs(ll.lat - c.ubicacion_lat) < 0.0001 && Math.abs(ll.lng - c.ubicacion_long) < 0.0001;
+  });
+  marker?.openPopup();
+}
+
+/* ── Modal nueva colmena ── */
+function abrirModalNueva() {
+  document.getElementById('form-nueva-colmena').reset();
+  document.getElementById('modal-nueva').classList.add('visible');
+}
+
+function cerrarModal(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+
+async function guardarColmena(e) {
+  e.preventDefault();
+  const body = {
+    ubicacion_lat:     parseFloat(document.getElementById('nueva-lat').value),
+    ubicacion_long:    parseFloat(document.getElementById('nueva-lng').value),
+    estado_salud:      document.getElementById('nueva-salud').value,
+    dias_activas:      parseInt(document.getElementById('nueva-dias').value) || 0,
+    edad_reina:        parseInt(document.getElementById('nueva-reina').value) || 0,
+    ultima_extraccion: document.getElementById('nueva-extraccion').value || null,
+    observaciones:     document.getElementById('nueva-observaciones').value || null,
+    modo:              document.getElementById('nueva-modo').value
+  };
+
+  const data = await api.post('/intranet/colmenas', body);
+
+  if (data?.success) {
+    toast('Colmena registrada correctamente.', 'exito');
+    cerrarModal('modal-nueva');
+    cargarColmenas(filtroActual);
+  } else {
+    toast(data?.error || 'Error al guardar colmena.', 'error');
+  }
+}
+
+/* ── Modal simular ── */
+function abrirModalSimular() {
+  document.getElementById('modal-simular').classList.add('visible');
+}
+
+async function ejecutarSimulacion() {
+  const btn = document.getElementById('btn-ejecutar-sim');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin:0;" aria-hidden="true"></span> Generando...';
+
+  const data = await api.post('/intranet/colmenas/simular', {
+    cantidad:      parseInt(document.getElementById('sim-cantidad').value) || 5,
+    subsimulacion: document.getElementById('sim-condicion').value || null
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-play" aria-hidden="true"></i> Generar';
+
+  if (data?.success) {
+    toast(data.message, 'exito');
+    cerrarModal('modal-simular');
+    cargarColmenas(filtroActual);
+  } else {
+    toast(data?.error || 'Error al simular.', 'error');
+  }
+}
+
+async function desactivarColmena(id) {
+  if (!confirm(`¿Desactivar la colmena #${id}? Esta acción se puede revertir desde la base de datos.`)) return;
+  const data = await api.delete(`/intranet/colmenas/${id}`);
+  if (data?.success) {
+    toast('Colmena desactivada.', 'exito');
+    cargarColmenas(filtroActual);
+  } else {
+    toast(data?.error || 'Error al desactivar.', 'error');
+  }
+}
+
+// Exponer funciones globalmente
+window.setFiltroTabla     = setFiltroTabla;
+window.filtrarMapa        = filtrarMapa;
+window.verMapa            = verMapa;
+window.abrirModalNueva    = abrirModalNueva;
+window.cerrarModal        = cerrarModal;
+window.guardarColmena     = guardarColmena;
+window.abrirModalSimular  = abrirModalSimular;
+window.ejecutarSimulacion = ejecutarSimulacion;
+window.desactivarColmena  = desactivarColmena;
+</script>
+</body>
+</html>

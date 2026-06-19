@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Dashboard — Sistema de Gestión San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Menú del sistema">
+    <!-- Renderizado dinámicamente por auth.js -->
+  </aside>
+
+  <!-- ── ÁREA PRINCIPAL ───────────────────────────────────────── -->
+  <div class="main-area">
+
+    <!-- Header -->
+    <header class="main-header" role="banner">
+      <div class="page-title">
+        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+        Dashboard
+      </div>
+      <div class="header-acciones">
+        <span id="hora-actual" style="font-size:0.8rem;color:var(--texto-suave);" aria-live="polite"></span>
+        <a href="/" target="_blank" class="btn btn-outline btn-sm" title="Ver portal público">
+          <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          Portal público
+        </a>
+      </div>
+    </header>
+
+    <!-- Contenido -->
+    <main class="main-content" id="contenido-principal" role="main">
+
+      <!-- Saludo -->
+      <div style="margin-bottom:1.5rem;">
+        <h1 id="saludo-usuario" style="font-size:1.3rem;font-weight:700;color:var(--texto);margin-bottom:0.2rem;"></h1>
+        <p style="font-size:0.85rem;color:var(--texto-suave);" id="fecha-dashboard"></p>
+      </div>
+
+      <!-- Alertas críticas -->
+      <div id="contenedor-alertas-criticas" style="margin-bottom:1.25rem;"></div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid" id="kpi-grid" aria-label="Indicadores del sistema">
+        <!-- Cargado dinámicamente -->
+        <div class="kpi-card" style="grid-column:1/-1;text-align:center;padding:2rem;">
+          <div class="spinner" style="margin:0 auto;"></div>
+          <p style="margin-top:0.75rem;color:var(--texto-suave);">Cargando indicadores...</p>
+        </div>
+      </div>
+
+      <!-- Fila inferior: gráfico + alertas recientes -->
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:1.25rem;align-items:start;">
+
+        <!-- Gráfico de temperatura (últimas 24h) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">
+              <i class="fa-solid fa-temperature-half" aria-hidden="true"></i>
+              Temperatura Colmenas — Últimas 24h
+            </div>
+            <div class="filtros-barra">
+              <button class="filtro-btn activo" onclick="cargarGrafico(24)"  id="btn-24h">24 h</button>
+              <button class="filtro-btn"        onclick="cargarGrafico(48)"  id="btn-48h">48 h</button>
+              <button class="filtro-btn"        onclick="cargarGrafico(168)" id="btn-7d">7 días</button>
+            </div>
+          </div>
+          <canvas id="grafico-temperatura" height="220" aria-label="Gráfico de temperatura de colmenas"></canvas>
+          <p id="grafico-sin-datos" style="display:none;text-align:center;color:var(--texto-suave);padding:2rem;font-size:0.85rem;">
+            No hay lecturas de monitoreo en el período seleccionado.
+          </p>
+        </div>
+
+        <!-- Alertas recientes -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              Alertas Recientes
+            </div>
+            <span id="badge-alertas" class="badge badge-malo" style="display:none;"></span>
+          </div>
+          <div id="lista-alertas">
+            <div style="text-align:center;padding:1.5rem;color:var(--texto-suave);font-size:0.85rem;">
+              <div class="spinner" style="margin:0 auto 0.5rem;"></div>
+              Cargando alertas...
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Solicitudes pendientes recientes -->
+      <div class="card" style="margin-top:1.25rem;" id="card-solicitudes">
+        <div class="card-header">
+          <div class="card-titulo">
+            <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+            Solicitudes Públicas Pendientes
+          </div>
+          <a href="solicitudes.html" class="btn btn-outline btn-sm">Ver todas</a>
+        </div>
+        <div id="tabla-solicitudes-pendientes">
+          <div style="text-align:center;padding:1.5rem;color:var(--texto-suave);">
+            <div class="spinner" style="margin:0 auto 0.5rem;"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-contenedor" id="toast-contenedor" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+<script type="module">
+import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+import { api, toast, fmtFecha, fmtFechaHora, badgeEstado } from './assets/js/api.js';
+
+// Exponer logout globalmente
+window.logout = cerrarSesion;
+
+let graficoTemp = null;
+
+/* ── Inicialización ─────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  const usuario = await verificarAcceso('dashboard');
+  if (!usuario) return;
+
+  renderSidebar('dashboard');
+
+  // Saludo
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('saludo-usuario').textContent = `${saludo}, ${usuario.nombres.split(' ')[0]}.`;
+  document.getElementById('fecha-dashboard').textContent =
+    new Date().toLocaleDateString('es-EC', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Reloj
+  actualizarHora();
+  setInterval(actualizarHora, 60000);
+
+  // Cargar datos
+  cargarKPIs();
+  cargarAlertas();
+  cargarGrafico(24);
+  cargarSolicitudesPendientes();
+});
+
+function actualizarHora() {
+  document.getElementById('hora-actual').textContent =
+    new Date().toLocaleTimeString('es-EC', { hour:'2-digit', minute:'2-digit' });
+}
+
+/* ── KPIs ────────────────────────────────────────────────────── */
+async function cargarKPIs() {
+  const data = await api.get('/intranet/dashboard');
+  if (!data?.success) return;
+  const d = data.data;
+
+  const kpis = [
+    { valor: d.colmenas.activas,               etiqueta: 'Colmenas activas',   icono: 'fa-layer-group',  color: 'verde' },
+    { valor: d.colmenas.criticas,              etiqueta: 'Colmenas críticas',  icono: 'fa-triangle-exclamation', color: 'rojo' },
+    { valor: `${d.cosechas.total}`,            etiqueta: 'Cosechas este mes',  icono: 'fa-jar',          color: '' },
+    { valor: d.reservas.pendientes,            etiqueta: 'Reservas pendientes',icono: 'fa-calendar',     color: 'naranja' },
+    { valor: d.reservas.confirmadas,           etiqueta: 'Reservas confirmadas',icono:'fa-calendar-check',color: 'verde' },
+    { valor: d.clientes.total,                 etiqueta: 'Clientes registrados',icono:'fa-users',         color: 'azul' },
+    { valor: d.solicitudes_pendientes,         etiqueta: 'Solicitudes por revisar',icono:'fa-inbox',     color: d.solicitudes_pendientes > 0 ? 'naranja' : '' },
+    { valor: d.alertas_no_leidas,              etiqueta: 'Alertas sin leer',   icono: 'fa-bell',         color: d.alertas_no_leidas > 0 ? 'rojo' : '' },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.color}" role="region" aria-label="${k.etiqueta}: ${k.valor}">
+      <div class="kpi-icono" aria-hidden="true"><i class="fa-solid ${k.icono}"></i></div>
+      <div class="kpi-valor">${k.valor ?? '—'}</div>
+      <div class="kpi-etiqueta">${k.etiqueta}</div>
+    </div>
+  `).join('');
+
+  // Alerta de colmenas críticas en banner
+  if (d.colmenas.criticas > 0) {
+    document.getElementById('contenedor-alertas-criticas').innerHTML = `
+      <div class="alerta alerta-critica" role="alert">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <strong>${d.colmenas.criticas} colmena(s) en estado crítico.</strong>
+        Revisa el módulo de Apiario para atención inmediata.
+        <a href="colmenas.html" style="color:var(--rojo);font-weight:600;margin-left:0.5rem;">Ver colmenas</a>
+      </div>`;
+  }
+}
+
+/* ── Alertas recientes ──────────────────────────────────────── */
+async function cargarAlertas() {
+  const data = await api.get('/intranet/dashboard/alertas');
+  const cont = document.getElementById('lista-alertas');
+
+  if (!data?.success || !data.data.length) {
+    cont.innerHTML = `<p style="text-align:center;color:var(--texto-suave);padding:1.5rem;font-size:0.85rem;">
+      <i class="fa-solid fa-circle-check" style="color:var(--verde-claro);margin-right:0.4rem;" aria-hidden="true"></i>
+      Sin alertas activas
+    </p>`;
+    return;
+  }
+
+  const badge = document.getElementById('badge-alertas');
+  badge.textContent = data.data.length;
+  badge.style.display = 'inline-flex';
+
+  const coloresMap = { critica: 'var(--rojo)', advertencia: 'var(--naranja)', info: 'var(--azul)' };
+  cont.innerHTML = data.data.map(a => `
+    <div style="padding:0.8rem 0;border-bottom:1px solid var(--borde);display:flex;align-items:flex-start;gap:0.65rem;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${coloresMap[a.severidad]||'var(--azul)'};margin-top:0.35rem;flex-shrink:0;" aria-hidden="true"></div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-size:0.83rem;color:var(--texto);margin-bottom:0.15rem;line-height:1.4;">${a.mensaje}</p>
+        <span style="font-size:0.72rem;color:var(--texto-suave);">${fmtFechaHora(a.creado_en)}</span>
+      </div>
+      <button onclick="marcarAlertaLeida(${a.id_alerta}, this)"
+        style="flex-shrink:0;background:none;border:none;color:var(--texto-suave);cursor:pointer;font-size:0.8rem;padding:0.25rem;"
+        title="Marcar como leída" aria-label="Marcar alerta como leída">
+        <i class="fa-solid fa-check" aria-hidden="true"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function marcarAlertaLeida(id, btn) {
+  await api.put(`/intranet/dashboard/alertas/${id}/leer`, {});
+  btn.closest('div[style]').remove();
+}
+window.marcarAlertaLeida = marcarAlertaLeida;
+
+/* ── Gráfico de temperatura ─────────────────────────────────── */
+async function cargarGrafico(horas) {
+  ['24h','48h','7d'].forEach(k => {
+    document.getElementById(`btn-${k}`).classList.remove('activo');
+  });
+  const btnMap = { 24: 'btn-24h', 48: 'btn-48h', 168: 'btn-7d' };
+  document.getElementById(btnMap[horas])?.classList.add('activo');
+
+  const data = await api.get(`/intranet/monitoreo/dashboard/resumen`);
+
+  // Obtenemos lecturas agrupadas por colmena para el gráfico
+  // Usamos el endpoint de la primera colmena activa como ejemplo
+  const colmenas = await api.get('/intranet/colmenas');
+  const canvas   = document.getElementById('grafico-temperatura');
+  const sinDatos = document.getElementById('grafico-sin-datos');
+
+  if (!colmenas?.data?.length) {
+    canvas.style.display = 'none';
+    sinDatos.style.display = 'block';
+    return;
+  }
+
+  // Cargar lecturas de las primeras 3 colmenas activas
+  const primera = colmenas.data[0];
+  const lecturas = await api.get(`/intranet/monitoreo/${primera.id_colmena}?horas=${horas}`);
+
+  if (!lecturas?.data?.length) {
+    canvas.style.display = 'none';
+    sinDatos.style.display = 'block';
+    return;
+  }
+
+  canvas.style.display = 'block';
+  sinDatos.style.display = 'none';
+
+  const labels = lecturas.data.map(l => {
+    const d = new Date(l.fecha_hora);
+    return d.toLocaleTimeString('es-EC', { hour:'2-digit', minute:'2-digit' });
+  });
+  const temps   = lecturas.data.map(l => l.temperatura);
+  const humedad = lecturas.data.map(l => l.humedad);
+
+  if (graficoTemp) graficoTemp.destroy();
+
+  graficoTemp = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `Temperatura (°C) — Colmena #${primera.id_colmena}`,
+          data:  temps,
+          borderColor:     '#C9963D',
+          backgroundColor: 'rgba(201,150,61,0.08)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 2,
+          borderWidth: 2
+        },
+        {
+          label: 'Humedad (%)',
+          data:  humedad,
+          borderColor:     '#8A9E5B',
+          backgroundColor: 'rgba(138,158,91,0.05)',
+          tension: 0.4,
+          fill: false,
+          pointRadius: 2,
+          borderWidth: 1.5,
+          borderDash: [4,4]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { font: { family: 'Inter', size: 11 }, color: '#5A4832', padding: 16 } }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: '#9A8876' }, grid: { color: 'rgba(44,36,22,0.05)' } },
+        y: { ticks: { font: { size: 10 }, color: '#9A8876' }, grid: { color: 'rgba(44,36,22,0.05)' }, min: 0 }
+      }
+    }
+  });
+}
+
+window.cargarGrafico = cargarGrafico;
+
+/* ── Solicitudes pendientes ─────────────────────────────────── */
+async function cargarSolicitudesPendientes() {
+  const data = await api.get('/intranet/solicitudes?estado=pendiente');
+  const cont = document.getElementById('tabla-solicitudes-pendientes');
+
+  if (!data?.data?.length) {
+    cont.innerHTML = `<p style="text-align:center;color:var(--texto-suave);padding:1.25rem;font-size:0.85rem;">
+      Sin solicitudes pendientes
+    </p>`;
+    return;
+  }
+
+  const items = data.data.slice(0, 5);
+
+  cont.innerHTML = `
+    <div class="tabla-contenedor">
+      <table class="tabla-datos" role="table" aria-label="Solicitudes pendientes">
+        <thead>
+          <tr>
+            <th scope="col">Solicitante</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(s => `
+            <tr>
+              <td>
+                <strong style="font-weight:600;">${s.nombre_solicitante}</strong>
+                <br><span style="font-size:0.75rem;color:var(--texto-suave);">${s.correo}</span>
+              </td>
+              <td>${s.tipo}</td>
+              <td style="font-size:0.82rem;">${fmtFecha(s.creado_en)}</td>
+              <td>${badgeEstado(s.estado)}</td>
+              <td>
+                <a href="solicitudes.html" class="btn btn-outline btn-sm">
+                  <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                  Revisar
+                </a>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+</script>
+</body>
+</html>

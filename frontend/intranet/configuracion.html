@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Configuración de Modos — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+  <style>
+    .modo-card {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .modo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--borde);
+      padding-bottom: 1rem;
+    }
+    .modo-titulo {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--verde-bosque);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .modo-switch {
+      display: flex;
+      background: var(--fondo);
+      border-radius: 20px;
+      padding: 0.25rem;
+      border: 1px solid var(--borde);
+    }
+    .switch-btn {
+      padding: 0.4rem 1rem;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--texto-suave);
+      transition: all 0.2s;
+    }
+    .switch-btn.activo-real {
+      background: var(--verde-olivo);
+      color: white;
+    }
+    .switch-btn.activo-simulado {
+      background: var(--naranja);
+      color: white;
+    }
+    .subsimulacion-cont {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 1rem;
+      background: rgba(232,135,58,0.1);
+      border-radius: var(--radio);
+      border: 1px dashed var(--naranja);
+    }
+    .subsimulacion-cont.activo {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar" role="navigation"></aside>
+
+  <div class="main-area">
+    <header class="main-header" role="banner">
+      <div class="page-title">
+        <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+        Configuración de Modos (Real / Simulado)
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div style="margin-bottom:2rem;color:var(--texto-suave);max-width:800px;">
+        Esta pantalla permite alternar el comportamiento de los distintos módulos del sistema entre datos reales y datos simulados para propósitos de prueba, capacitación o depuración. Solo los usuarios con permisos de Simulación pueden realizar estos cambios.
+      </div>
+
+      <div class="kpi-grid" id="modos-grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+        <!-- Cargado dinámicamente -->
+        <div style="grid-column:1/-1;text-align:center;padding:2rem;">Cargando configuración...</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast-contenedor" id="toast-contenedor"></div>
+
+<script type="module">
+  import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+  import { api, toast, fmtFechaHora } from './assets/js/api.js';
+
+  window.logout = cerrarSesion;
+
+  const opcionesSubsimulacion = {
+    'colmenas': [
+      { id: 'normal', txt: 'Normal' },
+      { id: 'colmena_critica', txt: 'Forzar Colmena Crítica' }
+    ],
+    'monitoreo': [
+      { id: 'normal', txt: 'Temperaturas Normales' },
+      { id: 'alerta_calor', txt: 'Alerta de Calor Excesivo' }
+    ],
+    'cosechas': [
+      { id: 'alta_produccion', txt: 'Alta Producción' },
+      { id: 'baja_produccion', txt: 'Baja Producción' }
+    ],
+    'inventario': [
+      { id: 'normal', txt: 'Stock Normal' },
+      { id: 'bajo_stock', txt: 'Forzar Bajo Stock' }
+    ],
+    'hospedaje': [
+      { id: 'normal', txt: 'Disponibilidad Normal' },
+      { id: 'ocupacion_alta', txt: 'Ocupación Alta' }
+    ],
+    'reservas': [
+      { id: 'normal', txt: 'Flujo Normal' },
+      { id: 'reservas_altas', txt: 'Alta Demanda' }
+    ],
+    'default': [
+      { id: 'normal', txt: 'Comportamiento por defecto' }
+    ]
+  };
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const usuario = await verificarAcceso('configuracion');
+    if (!usuario) return;
+    renderSidebar('configuracion');
+    await cargarModos();
+  });
+
+  async function cargarModos() {
+    const res = await api.get('/intranet/configuracion/modos');
+    const grid = document.getElementById('modos-grid');
+
+    if (!res?.success || !res.data.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;">No hay módulos configurables.</div>';
+      return;
+    }
+
+    grid.innerHTML = res.data.map(m => {
+      const modo = m.modo || 'real';
+      const isReal = modo === 'real';
+      const opciones = opcionesSubsimulacion[m.slug] || opcionesSubsimulacion['default'];
+      const sub = m.subsimulacion || 'normal';
+
+      return `
+        <div class="modo-card">
+          <div class="modo-header">
+            <div class="modo-titulo">
+              <i class="${m.icono}"></i> ${m.nombre}
+            </div>
+            <div class="modo-switch">
+              <button class="switch-btn ${isReal ? 'activo-real' : ''}" onclick="cambiarModo(${m.id_modulo}, 'real', this.closest('.modo-card'))">Real</button>
+              <button class="switch-btn ${!isReal ? 'activo-simulado' : ''}" onclick="cambiarModo(${m.id_modulo}, 'simulado', this.closest('.modo-card'))">Simulado</button>
+            </div>
+          </div>
+          
+          <div class="subsimulacion-cont ${!isReal ? 'activo' : ''}">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.5rem;">Sub-modo de simulación:</label>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <select class="form-control select-subsimulacion" style="margin-bottom:0;flex:1;">
+                ${opciones.map(o => `<option value="${o.id}" ${sub === o.id ? 'selected' : ''}>${o.txt}</option>`).join('')}
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="guardarSub(${m.id_modulo}, this.closest('.modo-card'))">Guardar</button>
+            </div>
+          </div>
+          
+          <div style="font-size:0.75rem;color:var(--texto-suave);text-align:right;">
+            Última actualización: ${m.actualizado_en ? fmtFechaHora(m.actualizado_en) : 'Nunca'}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.cambiarModo = async (id_modulo, modo, card) => {
+    // Si cambia a real, guardamos de inmediato sin subsimulacion
+    let sub = null;
+    if (modo === 'simulado') {
+      sub = card.querySelector('.select-subsimulacion').value;
+    }
+
+    const res = await api.put(`/intranet/configuracion/modos/${id_modulo}`, { modo, subsimulacion: sub });
+    if (res?.success) {
+      toast.exito(res.message);
+      
+      // Actualizar UI localmente
+      const btns = card.querySelectorAll('.switch-btn');
+      btns[0].classList.toggle('activo-real', modo === 'real');
+      btns[1].classList.toggle('activo-simulado', modo === 'simulado');
+      card.querySelector('.subsimulacion-cont').classList.toggle('activo', modo === 'simulado');
+    }
+  };
+
+  window.guardarSub = async (id_modulo, card) => {
+    const sub = card.querySelector('.select-subsimulacion').value;
+    const res = await api.put(`/intranet/configuracion/modos/${id_modulo}`, { modo: 'simulado', subsimulacion: sub });
+    if (res?.success) {
+      toast.exito('Sub-simulación guardada.');
+    }
+  };
+</script>
+</body>
+</html>

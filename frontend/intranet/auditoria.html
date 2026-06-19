@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Auditoría del Sistema — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+  <style>
+    .log-row {
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    .badge-accion {
+      background: rgba(138, 158, 91, 0.1);
+      color: var(--verde-bosque);
+      border: 1px solid rgba(138, 158, 91, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar" role="navigation"></aside>
+
+  <div class="main-area">
+    <header class="main-header" role="banner">
+      <div class="page-title">
+        <i class="fa-solid fa-scroll" aria-hidden="true"></i>
+        Registro de Auditoría
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="card">
+        <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+          <div class="card-titulo">Actividad Reciente del Sistema</div>
+          
+          <div style="display:flex; gap:0.5rem; align-items:center; flex:1; justify-content:flex-end;">
+            <select id="filtro-modulo" class="form-control" style="width:180px;margin-bottom:0;" onchange="cargarAuditoria()">
+              <option value="">Todos los módulos</option>
+              <option value="auth">Autenticación</option>
+              <option value="usuarios">Usuarios y Roles</option>
+              <option value="configuracion">Configuración</option>
+              <option value="colmenas">Apiario</option>
+            </select>
+            <button class="btn btn-outline" onclick="cargarAuditoria()" title="Actualizar">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="tabla-contenedor">
+          <table class="tabla-datos">
+            <thead>
+              <tr>
+                <th>Fecha y Hora</th>
+                <th>Usuario</th>
+                <th>Módulo</th>
+                <th>Acción</th>
+                <th>Dirección IP</th>
+                <th>Navegador</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-auditoria">
+              <tr><td colspan="6" style="text-align:center;padding:2rem;">Cargando registros...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="padding:1rem;text-align:center;border-top:1px solid var(--borde);">
+          <button class="btn btn-outline btn-sm" id="btn-ant" onclick="cambiarPagina(-1)" disabled><i class="fa-solid fa-chevron-left"></i> Anterior</button>
+          <span style="margin:0 1rem;font-size:0.9rem;" id="txt-pagina">Página 1</span>
+          <button class="btn btn-outline btn-sm" id="btn-sig" onclick="cambiarPagina(1)">Siguiente <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast-contenedor" id="toast-contenedor"></div>
+
+<script type="module">
+  import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+  import { api, fmtFechaHora } from './assets/js/api.js';
+
+  window.logout = cerrarSesion;
+  let paginaActual = 1;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const usuario = await verificarAcceso('auditoria');
+    if (!usuario) return;
+    renderSidebar('auditoria');
+    await cargarAuditoria();
+  });
+
+  window.cargarAuditoria = async () => {
+    const modulo = document.getElementById('filtro-modulo').value;
+    let url = `/intranet/auditoria?pagina=${paginaActual}`;
+    if (modulo) url += `&modulo=${modulo}`;
+
+    const res = await api.get(url);
+    const tbody = document.getElementById('tabla-auditoria');
+
+    if (!res?.success || !res.data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay registros de auditoría.</td></tr>';
+      document.getElementById('btn-sig').disabled = true;
+      return;
+    }
+
+    tbody.innerHTML = res.data.map(a => `
+      <tr class="log-row">
+        <td style="color:var(--texto-suave);">${fmtFechaHora(a.creado_en)}</td>
+        <td><strong>${a.nombre_usuario || 'Desconocido (ID: '+a.id_usuario+')'}</strong></td>
+        <td>${a.modulo}</td>
+        <td><span class="badge badge-accion">${a.accion}</span></td>
+        <td>${a.ip || '—'}</td>
+        <td style="font-size:0.75rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${a.user_agent || ''}">${a.user_agent || '—'}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('txt-pagina').textContent = `Página ${res.pagina}`;
+    document.getElementById('btn-ant').disabled = res.pagina === 1;
+    // Si trajo 50, es probable que haya otra página
+    document.getElementById('btn-sig').disabled = res.data.length < 50;
+  };
+
+  window.cambiarPagina = (delta) => {
+    paginaActual += delta;
+    if (paginaActual < 1) paginaActual = 1;
+    cargarAuditoria();
+  };
+</script>
+</body>
+</html>

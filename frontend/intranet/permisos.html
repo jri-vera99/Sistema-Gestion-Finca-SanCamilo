@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Permisos de Módulos — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+  <style>
+    .matriz-permisos th, .matriz-permisos td {
+      text-align: center;
+      vertical-align: middle;
+    }
+    .matriz-permisos td.texto-izq {
+      text-align: left;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--verde-olivo);
+    }
+    .tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--borde); margin-bottom: 1rem; }
+    .tab-btn { background: none; border: none; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600; color: var(--texto-suave); }
+    .tab-btn.activo { color: var(--verde-bosque); border-bottom-color: var(--verde-olivo); }
+    .tab-content { display: none; }
+    .tab-content.activo { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar" role="navigation"></aside>
+
+  <div class="main-area">
+    <header class="main-header" role="banner">
+      <div class="page-title">
+        <i class="fa-solid fa-key" aria-hidden="true"></i>
+        Gestión de Permisos
+      </div>
+      <div class="header-acciones">
+        <a href="usuarios.html" class="btn btn-outline">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a Usuarios
+        </a>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="tabs" id="tabs-permisos">
+            <button class="tab-btn activo" onclick="switchTab('rol')">Permisos por Rol</button>
+            <button class="tab-btn" onclick="switchTab('usuario')">Excepciones por Usuario</button>
+          </div>
+        </div>
+
+        <!-- TAB: ROL -->
+        <div class="tab-content activo" id="tab-rol">
+          <div style="padding:1rem;">
+            <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;">
+              <label for="select-rol" style="font-size:0.9rem;font-weight:600;">Seleccionar Rol:</label>
+              <select id="select-rol" class="form-control" style="width:250px;margin-bottom:0;" onchange="cargarPermisosRol()"></select>
+            </div>
+            
+            <div class="tabla-contenedor">
+              <form id="form-permisos-rol">
+                <table class="tabla-datos matriz-permisos">
+                  <thead>
+                    <tr id="thead-permisos-rol">
+                      <th class="texto-izq">Módulo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-permisos-rol">
+                    <tr><td colspan="10">Selecciona un rol para ver sus permisos.</td></tr>
+                  </tbody>
+                </table>
+                <div style="padding:1.5rem;text-align:right;border-top:1px solid var(--borde);">
+                  <button type="submit" class="btn btn-primario" id="btn-guardar-rol" disabled>
+                    <i class="fa-solid fa-save"></i> Guardar Permisos del Rol
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: USUARIO -->
+        <div class="tab-content" id="tab-usuario">
+          <div style="padding:1rem;">
+            <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;">
+              <label for="select-usuario" style="font-size:0.9rem;font-weight:600;">Seleccionar Usuario:</label>
+              <select id="select-usuario" class="form-control" style="width:250px;margin-bottom:0;" onchange="cargarPermisosUsuario()"></select>
+            </div>
+            
+            <div class="tabla-contenedor">
+              <form id="form-permisos-usuario">
+                <table class="tabla-datos matriz-permisos">
+                  <thead>
+                    <tr id="thead-permisos-usuario">
+                      <th class="texto-izq">Módulo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-permisos-usuario">
+                    <tr><td colspan="10">Selecciona un usuario para ver o añadir excepciones.</td></tr>
+                  </tbody>
+                </table>
+                <div style="padding:1.5rem;text-align:right;border-top:1px solid var(--borde);">
+                  <button type="submit" class="btn btn-primario" id="btn-guardar-usuario" disabled>
+                    <i class="fa-solid fa-save"></i> Guardar Excepciones
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast-contenedor" id="toast-contenedor"></div>
+
+<script type="module">
+  import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+  import { api, toast } from './assets/js/api.js';
+
+  window.logout = cerrarSesion;
+  let modulosList = [];
+  let permisosList = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const usuario = await verificarAcceso('usuarios');
+    if (!usuario) return;
+    renderSidebar('usuarios');
+    await cargarEstructura();
+    await cargarRoles();
+    await cargarUsuarios();
+  });
+
+  window.switchTab = (tab) => {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('activo'));
+    document.querySelectorAll('.tab-content').forEach(cont => cont.classList.remove('activo'));
+    document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('activo');
+    document.getElementById(`tab-${tab}`).classList.add('activo');
+  };
+
+  async function cargarRoles() {
+    const res = await api.get('/intranet/usuarios/roles/lista');
+    if (res?.success) {
+      document.getElementById('select-rol').innerHTML = `
+        <option value="" disabled selected>-- Elige un rol --</option>
+        ${res.data.map(r => `<option value="${r.id_rol}" ${r.id_rol === 1 ? 'disabled' : ''}>${r.nombre_rol} ${r.id_rol === 1 ? '(Superadmin)' : ''}</option>`).join('')}
+      `;
+    }
+  }
+
+  async function cargarUsuarios() {
+    const res = await api.get('/intranet/usuarios');
+    if (res?.success) {
+      document.getElementById('select-usuario').innerHTML = `
+        <option value="" disabled selected>-- Elige un usuario --</option>
+        ${res.data.map(u => `<option value="${u.id_usuario}" ${u.es_superadmin === 1 ? 'disabled' : ''}>${u.nombres} (${u.correo}) ${u.es_superadmin === 1 ? ' [Superadmin]' : ''}</option>`).join('')}
+      `;
+    }
+  }
+
+  async function cargarEstructura() {
+    const res = await api.get('/intranet/usuarios/modulos-permisos');
+    if (res?.success) {
+      modulosList = res.modulos;
+      permisosList = res.permisos;
+      
+      const theadRol = document.getElementById('thead-permisos-rol');
+      const theadUsu = document.getElementById('thead-permisos-usuario');
+      let ths = '<th class="texto-izq">Módulo</th>';
+      permisosList.forEach(p => ths += `<th>${p.nombre}</th>`);
+      
+      theadRol.innerHTML = ths;
+      theadUsu.innerHTML = ths;
+    }
+  }
+
+  window.cargarPermisosRol = async () => {
+    const id_rol = document.getElementById('select-rol').value;
+    if (!id_rol) return;
+    document.getElementById('btn-guardar-rol').disabled = false;
+    
+    const res = await api.get(`/intranet/permisos/roles/${id_rol}`);
+    const asignados = res?.success ? res.data : [];
+    
+    const tbody = document.getElementById('tbody-permisos-rol');
+    tbody.innerHTML = modulosList.map(m => {
+      let tds = `<td class="texto-izq"><i class="${m.icono}" style="width:20px;color:var(--texto-suave);"></i> <strong>${m.nombre}</strong></td>`;
+      permisosList.forEach(p => {
+        const tiene = asignados.find(x => x.id_modulo === m.id_modulo && x.id_permiso === p.id_permiso);
+        tds += `<td><input type="checkbox" name="permiso_rol[]" value='{"id_modulo":${m.id_modulo},"id_permiso":${p.id_permiso}}' ${tiene ? 'checked' : ''} /></td>`;
+      });
+      return `<tr>${tds}</tr>`;
+    }).join('');
+  };
+
+  window.cargarPermisosUsuario = async () => {
+    const id_usuario = document.getElementById('select-usuario').value;
+    if (!id_usuario) return;
+    document.getElementById('btn-guardar-usuario').disabled = false;
+    
+    const res = await api.get(`/intranet/permisos/usuarios/${id_usuario}`);
+    const extras = res?.success ? res.data : [];
+    
+    const tbody = document.getElementById('tbody-permisos-usuario');
+    tbody.innerHTML = modulosList.map(m => {
+      let tds = `<td class="texto-izq"><i class="${m.icono}" style="width:20px;color:var(--texto-suave);"></i> <strong>${m.nombre}</strong></td>`;
+      permisosList.forEach(p => {
+        const extra = extras.find(x => x.id_modulo === m.id_modulo && x.id_permiso === p.id_permiso);
+        tds += `<td><input type="checkbox" name="permiso_usu[]" value='{"id_modulo":${m.id_modulo},"id_permiso":${p.id_permiso}}' ${extra && extra.permitido === 1 ? 'checked' : ''} /></td>`;
+      });
+      return `<tr>${tds}</tr>`;
+    }).join('');
+  };
+
+  document.getElementById('form-permisos-rol').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id_rol = document.getElementById('select-rol').value;
+    const checkboxes = document.querySelectorAll('input[name="permiso_rol[]"]:checked');
+    const permisos = Array.from(checkboxes).map(cb => JSON.parse(cb.value));
+    const res = await api.post(`/intranet/permisos/roles/${id_rol}`, { permisos });
+    if (res?.success) toast.exito(res.message);
+  });
+
+  document.getElementById('form-permisos-usuario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id_usuario = document.getElementById('select-usuario').value;
+    const checkboxes = document.querySelectorAll('input[name="permiso_usu[]"]:checked');
+    // Guardamos las selecciones como concedidas (1)
+    const permisos = Array.from(checkboxes).map(cb => {
+      const p = JSON.parse(cb.value);
+      p.permitido = 1;
+      return p;
+    });
+    const res = await api.post(`/intranet/permisos/usuarios/${id_usuario}`, { permisos });
+    if (res?.success) toast.exito(res.message);
+  });
+</script>
+</body>
+</html>

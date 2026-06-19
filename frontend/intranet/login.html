@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Acceso — Sistema de Gestión San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="assets/css/intranet.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2D3524 0%, #1A2010 50%, #2C2416 100%);
+      padding: 1.5rem;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--fondo-card);
+      border-radius: 16px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, var(--verde), #2D3524);
+      padding: 2rem 2rem 1.75rem;
+      text-align: center;
+      border-bottom: 3px solid var(--acento);
+    }
+
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: var(--acento);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      color: var(--sidebar-bg);
+      margin: 0 auto 1rem;
+    }
+
+    .login-header h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.25rem;
+    }
+
+    .login-header p {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .login-cuerpo {
+      padding: 2rem;
+    }
+
+    .login-aviso {
+      font-size: 0.78rem;
+      color: var(--texto-suave);
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--borde);
+    }
+
+    .login-aviso a {
+      color: var(--verde-claro);
+      font-size: 0.78rem;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      background: var(--acento);
+      color: #2C2416;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transicion);
+      font-family: var(--fuente);
+      margin-top: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-login:hover:not(:disabled) {
+      background: var(--acento-claro);
+      box-shadow: 0 4px 16px rgba(201,150,61,0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-login:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .campo-password {
+      position: relative;
+    }
+
+    .campo-password .form-campo {
+      padding-right: 2.8rem;
+      width: 100%;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--texto-suave);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 0.9rem;
+      transition: color var(--transicion);
+    }
+
+    .toggle-password:hover { color: var(--texto); }
+
+    .error-login {
+      background: rgba(192,57,43,0.08);
+      border: 1px solid rgba(192,57,43,0.2);
+      border-radius: var(--radius-sm);
+      color: var(--rojo);
+      font-size: 0.83rem;
+      padding: 0.65rem 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .error-login.visible { display: flex; }
+
+    .mfa-campo {
+      display: none;
+      margin-top: 0.75rem;
+    }
+
+    .mfa-campo.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="login-card" role="main">
+  <div class="login-header">
+    <div class="login-logo" aria-hidden="true">
+      <i class="fa-solid fa-leaf"></i>
+    </div>
+    <h1>Finca San Camilo</h1>
+    <p>Sistema de Gestión — Acceso Interno</p>
+  </div>
+
+  <div class="login-cuerpo">
+    <div class="error-login" id="error-login" role="alert" aria-live="polite">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <span id="error-login-texto"></span>
+    </div>
+
+    <form id="form-login" onsubmit="iniciarSesion(event)" autocomplete="on" novalidate>
+
+      <div class="form-grupo" style="margin-bottom:1rem;">
+        <label class="form-label" for="correo-login">Correo electrónico</label>
+        <input
+          type="email"
+          class="form-campo"
+          id="correo-login"
+          name="correo"
+          placeholder="correo@ejemplo.com"
+          autocomplete="username email"
+          required
+        />
+      </div>
+
+      <div class="form-grupo" style="margin-bottom:1rem;">
+        <label class="form-label" for="contrasena-login">Contraseña</label>
+        <div class="campo-password">
+          <input
+            type="password"
+            class="form-campo"
+            id="contrasena-login"
+            name="contrasena"
+            placeholder="Tu contraseña"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="toggle-password" id="toggle-pass"
+            onclick="togglePassword()" aria-label="Mostrar u ocultar contraseña">
+            <i class="fa-solid fa-eye" id="icon-pass" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Campo MFA — preparado para futuro Google Authenticator -->
+      <div class="mfa-campo form-grupo" id="campo-mfa">
+        <label class="form-label" for="codigo-mfa">Código de verificación (2FA)</label>
+        <input
+          type="text"
+          class="form-campo"
+          id="codigo-mfa"
+          placeholder="Código de 6 dígitos"
+          maxlength="6"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          autocomplete="one-time-code"
+        />
+        <div class="form-ayuda">Ingresa el código de Google Authenticator o Duo Mobile</div>
+      </div>
+
+      <button type="submit" class="btn-login" id="btn-login">
+        <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+        Iniciar sesión
+      </button>
+
+    </form>
+
+    <div class="login-aviso">
+      <p>Acceso restringido. Solo personal autorizado.</p>
+      <p style="margin-top:0.5rem;"><a href="/">Volver al portal público</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-contenedor" id="toast-contenedor" aria-live="polite"></div>
+
+<script>
+const API_BASE = '/api';
+
+function togglePassword() {
+  const campo = document.getElementById('contrasena-login');
+  const icono = document.getElementById('icon-pass');
+  const mostrar = campo.type === 'password';
+  campo.type = mostrar ? 'text' : 'password';
+  icono.classList.toggle('fa-eye', !mostrar);
+  icono.classList.toggle('fa-eye-slash', mostrar);
+}
+
+function mostrarError(texto) {
+  const cont = document.getElementById('error-login');
+  document.getElementById('error-login-texto').textContent = texto;
+  cont.classList.add('visible');
+  setTimeout(() => cont.classList.remove('visible'), 6000);
+}
+
+async function iniciarSesion(e) {
+  e.preventDefault();
+  const btn    = document.getElementById('btn-login');
+  const correo = document.getElementById('correo-login').value.trim();
+  const pass   = document.getElementById('contrasena-login').value;
+
+  if (!correo || !pass) {
+    mostrarError('Completa todos los campos.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;" aria-hidden="true"></span> Verificando...';
+
+  try {
+    const res  = await fetch(`${API_BASE}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ correo, contrasena: pass })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      mostrarError(data.error || 'Credenciales incorrectas. Verifica tus datos.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Iniciar sesión';
+      return;
+    }
+
+    // Guardar sesión
+    localStorage.setItem('sc_token',   data.token);
+    localStorage.setItem('sc_usuario', JSON.stringify(data.usuario));
+    localStorage.setItem('sc_modulos', JSON.stringify(data.modulos_permitidos));
+
+    // Redirigir al dashboard o a la página solicitada
+    const params  = new URLSearchParams(window.location.search);
+    const destino = params.get('redir') || '/intranet/dashboard.html';
+    window.location.href = destino;
+
+  } catch (err) {
+    mostrarError('Error de conexión con el servidor. Verifica tu conexión a internet.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Iniciar sesión';
+  }
+}
+
+// Si ya hay sesión, redirigir al dashboard
+if (localStorage.getItem('sc_token')) {
+  window.location.href = '/intranet/dashboard.html';
+}
+
+// Mostrar aviso si la sesión expiró
+const params = new URLSearchParams(window.location.search);
+if (params.get('razon') === 'sesion_expirada') {
+  mostrarError('Tu sesión ha expirado. Inicia sesión nuevamente.');
+}
+</script>
+</body>
+</html>

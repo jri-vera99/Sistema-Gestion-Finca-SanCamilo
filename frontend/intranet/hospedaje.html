@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Hospedaje — San Camilo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/intranet.css">
+  <style>
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+    .modal.activo { display: flex; }
+    .modal-content { background: var(--blanco); border-radius: var(--radio-lg); width: 100%; max-width: 500px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-header { background: var(--fondo); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borde); }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; background: var(--fondo); display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--borde); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <header class="main-header">
+        <div class="page-title"><i class="fa-solid fa-bed"></i> Hospedaje</div>
+      </header>
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-titulo">Reservas de Hospedaje</div>
+            <button class="btn btn-primario" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Nueva Reserva</button>
+          </div>
+          <div class="tabla-contenedor">
+            <table class="tabla-datos">
+              <thead><tr><th>ID</th><th>Cliente</th><th>Habitación</th><th>Fechas</th><th>Estado</th></tr></thead>
+              <tbody id="lista-reservas"><tr><td colspan="5" style="text-align:center;">Cargando reservas...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-reserva">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="margin:0;font-size:1.1rem;color:var(--verde-bosque);">Nueva Reserva</h3>
+        <button class="btn btn-outline" style="border:none;padding:0.2rem 0.5rem;" onclick="cerrarModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <form id="form-reserva">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Cliente</label>
+            <select id="id_cliente" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Habitación</label>
+            <select id="id_habitacion" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" id="fecha_inicio" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" id="fecha_fin" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notas</label>
+            <textarea id="notas" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-contenedor" id="toast-contenedor"></div>
+
+  <script type="module">
+    import { verificarAcceso, renderSidebar, cerrarSesion } from './assets/js/auth.js';
+    import { api, toast } from './assets/js/api.js';
+    window.logout = cerrarSesion;
+
+    window.abrirModal = () => {
+      document.getElementById('form-reserva').reset();
+      document.getElementById('modal-reserva').classList.add('activo');
+    };
+    window.cerrarModal = () => document.getElementById('modal-reserva').classList.remove('activo');
+
+    async function cargar() {
+      const res = await api.get('/intranet/hospedaje/reservas');
+      const tbody = document.getElementById('lista-reservas');
+      if (res?.success) {
+        if (res.clientes) {
+          document.getElementById('id_cliente').innerHTML = res.clientes.map(c => `<option value="${c.id_cliente}">${c.nombres} ${c.apellidos || ''}</option>`).join('');
+        }
+        if (res.habitaciones) {
+          document.getElementById('id_habitacion').innerHTML = res.habitaciones.map(h => `<option value="${h.id_habitacion}">Hab ${h.id_habitacion} - ${h.tipo} (Cap: ${h.capacidad})</option>`).join('');
+        }
+        if (res.data?.length) {
+          tbody.innerHTML = res.data.map(r => `<tr>
+            <td>${r.id_reserva}</td>
+            <td>${r.nombre_cliente || ''} ${r.apellido_cliente || ''}</td>
+            <td>Hab ${r.id_habitacion}</td>
+            <td>${new Date(r.fecha_inicio).toLocaleDateString()} - ${new Date(r.fecha_fin).toLocaleDateString()}</td>
+            <td><span class="badge ${r.estado_reserva === 'confirmada' ? 'bg-verde' : 'bg-naranja'}">${r.estado_reserva}</span></td>
+          </tr>`).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay reservas.</td></tr>';
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const u = await verificarAcceso('hospedaje'); // Nota: el slug suele ser hospedaje, no reservas, pero en la DB es reservas. En auth js está como reservas o hospedaje?
+      if (!u) return;
+      renderSidebar('hospedaje'); // Ensure the sidebar active item matches
+      await cargar();
+    });
+
+    document.getElementById('form-reserva').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        id_cliente: document.getElementById('id_cliente').value,
+        id_habitacion: document.getElementById('id_habitacion').value,
+        fecha_inicio: document.getElementById('fecha_inicio').value,
+        fecha_fin: document.getElementById('fecha_fin').value,
+        notas: document.getElementById('notas').value
+      };
+      const res = await api.post('/intranet/hospedaje/reservas', body);
+      if (res?.success) {
+        toast.exito(res.message);
+        cerrarModal();
+        cargar();
+      }
+    });
+  </script>
+</body>
+</html>
