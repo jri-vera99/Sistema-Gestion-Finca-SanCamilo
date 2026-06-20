@@ -132,6 +132,11 @@ node app.js
 | Health check API | http://localhost:3000/api/health |
 
 
+## Enlaces del sistema desplegado
+
+- Portal público: https://sistema-gestion-finca-sancamilo-production.up.railway.app/
+- Intranet administrativa: https://sistema-gestion-finca-sancamilo-production.up.railway.app/intranet/login.html
+- Repositorio GitHub: https://github.com/jri-vera99/Sistema-Gestion-Finca-SanCamilo
 
 > Cambia la contraseña en tu primer inicio de sesión desde el panel.
 
